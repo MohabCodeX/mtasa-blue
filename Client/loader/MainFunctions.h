@@ -20,7 +20,6 @@ void HandleResetSettings();
 void HandleNotUsedMainMenu();
 void PreLaunchWatchDogs();
 void PostRunWatchDogs(int iReturnCode);
-void HandleIfGTAIsAlreadyRunning();
 void ValidateGTAPath();
 void CheckAntiVirusStatus();
 void CheckDataFiles();
