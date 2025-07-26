@@ -51,6 +51,7 @@ bool COMMAND_Executed(const char* szCommand, const char* szArguments, bool bHand
         {
             CLuaArguments cancelArguments;
             cancelArguments.PushString(szCommandBufferPointer);
+            cancelArguments.PushString(szArguments ? szArguments : "");
             if (!localPlayer->CallEvent("onClientCommand", cancelArguments, true))
             {
                 return true;
