@@ -17,6 +17,9 @@
 #include "CClientCorona.h"
 #include "CClientColShape.h"
 #include "CClientColCallback.h"
+#include <game/CObject.h>
+#include <game/CEntity.h>
+#include <unordered_map>
 
 class CClientMarkerManager;
 
@@ -86,6 +89,12 @@ public:
 
     void SetIgnoreAlphaLimits(bool ignore);
     bool AreAlphaLimitsIgnored() const noexcept { return m_pMarker->AreAlphaLimitsIgnored(); };
+    
+    static CClientMarker* GetMarkerFromCollisionObject(CObject* pObject);
+    static bool IsMarkerCollisionObject(CObject* pObject);
+    
+    CEntity*       GetGameEntity() override { return m_pCollisionObject; }
+    const CEntity* GetGameEntity() const override { return m_pCollisionObject; }
 
 protected:
     void StreamIn(bool bInstantly);
@@ -93,6 +102,9 @@ protected:
 
 private:
     void CreateOfType(int iType);
+    void CreateCollisionObject();
+    void DestroyCollisionObject();
+    void UpdateCollisionObjectPosition();
 
     CClientMarkerManager* m_pMarkerManager;
     CClientMarkerCommon*  m_pMarker;
@@ -101,4 +113,7 @@ private:
     static unsigned int m_uiStreamedInMarkers;
 
     CClientColShape* m_pCollision;
+    CObject*         m_pCollisionObject;
+    
+    static std::unordered_map<CObject*, CClientMarker*> s_CollisionObjectToMarker;
 };

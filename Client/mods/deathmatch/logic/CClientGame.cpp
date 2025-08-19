@@ -2406,6 +2406,21 @@ bool CClientGame::ProcessMessageForCursorEvents(HWND hwnd, UINT uMsg, WPARAM wPa
                                 if (!pEntity->IsLocalEntity())
                                     CollisionEntityID = pEntity->GetID();
                             }
+                            else
+                            {
+                                // Check if this is a marker collision object
+                                CObject* pObject = dynamic_cast<CObject*>(pGameEntity);
+                                if (pObject)
+                                {
+                                    CClientMarker* pMarker = CClientMarker::GetMarkerFromCollisionObject(pObject);
+                                    if (pMarker)
+                                    {
+                                        pCollisionEntity = pMarker;
+                                        if (!pMarker->IsLocalEntity())
+                                            CollisionEntityID = pMarker->GetID();
+                                    }
+                                }
+                            }
                         }
                     }
                     else

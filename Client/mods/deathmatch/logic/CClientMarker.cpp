@@ -17,14 +17,16 @@ extern CClientGame* g_pClientGame;
 #endif
 
 unsigned int CClientMarker::m_uiStreamedInMarkers = 0;
+std::unordered_map<CObject*, CClientMarker*> CClientMarker::s_CollisionObjectToMarker;
 
 CClientMarker::CClientMarker(CClientManager* pManager, ElementID ID, int iMarkerType) : ClassInit(this), CClientStreamElement(pManager->GetMarkerStreamer(), ID)
 {
     // Init
     m_pManager = pManager;
     m_pMarkerManager = pManager->GetMarkerManager();
-    m_pCollision = NULL;
-    m_pMarker = NULL;
+    m_pCollision = nullptr;
+    m_pMarker = nullptr;
+    m_pCollisionObject = nullptr;
 
     // Typename
     SetTypeName("marker");
@@ -46,6 +48,8 @@ CClientMarker::~CClientMarker()
 
     // Make sure nothing is still referencing us
     m_pManager->UnreferenceEntity(this);
+
+    DestroyCollisionObject();
 
     SAFE_DELETE(m_pCollision)
 
@@ -87,6 +91,8 @@ void CClientMarker::SetPosition(const CVector& vecPosition)
             m_pMarker->SetPosition(vecPosition);
         if (m_pCollision)
             m_pCollision->SetPosition(vecPosition);
+        
+        UpdateCollisionObjectPosition();
 
         // Update our streaming position
         UpdateStreamPosition(vecPosition);
@@ -396,6 +402,8 @@ void CClientMarker::StreamIn(bool bInstantly)
     {
         // Stream the marker in
         m_pMarker->StreamIn();
+        
+        CreateCollisionObject();
 
         // Increment streamed in counter
         ++m_uiStreamedInMarkers;
@@ -410,6 +418,8 @@ void CClientMarker::StreamOut()
     // Streamed in?
     if (IsStreamedIn())
     {
+        DestroyCollisionObject();
+        
         // Decrement streamed in counter
         --m_uiStreamedInMarkers;
 
@@ -534,6 +544,71 @@ CSphere CClientMarker::GetWorldBoundingSphere()
     // sphere.vecPosition = GetStreamPosition ();
     sphere.fRadius = GetSize();
     return sphere;
+}
+
+void CClientMarker::CreateCollisionObject()
+{
+    if (m_pCollisionObject)
+        return;
+
+    constexpr std::uint16_t MODEL_ID = 1337;
+    
+    m_pCollisionObject = g_pGame->GetPools()->AddObject(nullptr, MODEL_ID, false, true);
+    if (!m_pCollisionObject)
+        return;
+        
+    CVector vecPosition;
+    GetPosition(vecPosition);
+    m_pCollisionObject->Teleport(vecPosition.fX, vecPosition.fY, vecPosition.fZ);
+    
+    m_pCollisionObject->SetAlpha(0);
+    m_pCollisionObject->SetVisible(false);
+    
+    const float fSize = GetSize();
+    m_pCollisionObject->SetScale(fSize, fSize, fSize);
+    
+    m_pCollisionObject->SetFrozen(true);
+    m_pCollisionObject->SetCollisionEnabled(false);
+    
+    s_CollisionObjectToMarker[m_pCollisionObject] = this;
+    
+    g_pGame->GetWorld()->Add(m_pCollisionObject, CObject_Constructor);
+}
+
+void CClientMarker::DestroyCollisionObject()
+{
+    if (!m_pCollisionObject)
+        return;
+    
+    s_CollisionObjectToMarker.erase(m_pCollisionObject);
+        
+    g_pGame->GetWorld()->Remove(m_pCollisionObject, CObject_Destructor);
+    g_pGame->GetPools()->RemoveObject(m_pCollisionObject);
+    m_pCollisionObject = nullptr;
+}
+
+void CClientMarker::UpdateCollisionObjectPosition()
+{
+    if (!m_pCollisionObject)
+        return;
+        
+    CVector vecPosition;
+    GetPosition(vecPosition);
+    m_pCollisionObject->Teleport(vecPosition.fX, vecPosition.fY, vecPosition.fZ);
+}
+
+CClientMarker* CClientMarker::GetMarkerFromCollisionObject(CObject* pObject)
+{
+    if (!pObject)
+        return nullptr;
+        
+    const auto it = s_CollisionObjectToMarker.find(pObject);
+    return it != s_CollisionObjectToMarker.end() ? it->second : nullptr;
+}
+
+bool CClientMarker::IsMarkerCollisionObject(CObject* pObject)
+{
+    return GetMarkerFromCollisionObject(pObject) != nullptr;
 }
 
 void CClientMarker::SetIgnoreAlphaLimits(bool ignore)
