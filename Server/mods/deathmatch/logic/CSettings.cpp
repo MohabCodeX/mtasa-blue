@@ -70,7 +70,7 @@ CSettings::~CSettings()
 //
 // Status values: NotFound (none found), NoAccess (no access/error) or Found (found)
 CXMLNode* CSettings::Get(CXMLNode* pSource, CXMLNode* pStorage, const char* szSourceResource, const char* szLocalResource, const char* szSetting,
-                         bool& bDeleteNode, SettingStatus& eStatus, CXMLNode* pMultiresultParentNode)
+                         bool& bDeleteNode, SettingStatus& eStatus, bool isGlobalSettings, CXMLNode* pMultiresultParentNode)
 {
     CXMLNode*    pNode = NULL;
     unsigned int uiCurrentIndex = 0, uiResourceNameLength = 0;
@@ -142,7 +142,7 @@ CXMLNode* CSettings::Get(CXMLNode* pSource, CXMLNode* pStorage, const char* szSo
             }
 
             // Get the access type
-            AccessType eAccess = GetAccessType(strContent.at(0));
+            AccessType eAccess = GetAccessType(strContent.at(0), isGlobalSettings);
 
             // Parse the settings name and store the split off name in szName (skip the prefix, if any)
             szName = GetName(strContent.c_str(), uiResourceNameLength);
@@ -168,9 +168,25 @@ CXMLNode* CSettings::Get(CXMLNode* pSource, CXMLNode* pStorage, const char* szSo
                     CreateSetting(pMultiresultParentNode, strContent.c_str(), pValue->GetValue().c_str());
                 }
             }
-            else if (stricmp(szName, szQueryName) == 0 && stricmp(szResource, szQueryResource) == 0)
+            else if (stricmp(szName, szQueryName) == 0 && 
+                     (stricmp(szResource, szQueryResource) == 0 || 
+                      (isGlobalSettings && strlen(szResource) == 0 && strlen(szSourceResource) == 0)))
             {            // If the query name/resource and found node name/resource combinations are equal
-                eStatus = (stricmp(szResource, szLocalResource) == 0 || eAccess != CSettings::Private) ? Found : NoAccess;
+                if (isGlobalSettings && strlen(szSourceResource) == 0)
+                {
+                    if (eAccess == CSettings::Private)
+                    {
+                        eStatus = (stricmp(szResource, szLocalResource) == 0) ? Found : NoAccess;
+                    }
+                    else
+                    {
+                        eStatus = Found;
+                    }
+                }
+                else
+                {
+                    eStatus = (stricmp(szResource, szLocalResource) == 0 || eAccess != CSettings::Private) ? Found : NoAccess;
+                }
                 return pNode;
             }
         }
@@ -223,12 +239,12 @@ CXMLNode* CSettings::Get(const char* szLocalResource, const char* szSetting, boo
         // Try to get the value for the appropriate setting from the settings registry
         if (pStorage)
         {
-            pNode = Get(m_pNodeGlobalSettings, pStorage, "", szLocalResource, szSetting, bDeleteNode, eStatus);
+            pNode = Get(m_pNodeGlobalSettings, pStorage, "", szLocalResource, szSetting, bDeleteNode, eStatus, true);
             // If we're getting all of the resource's settings, throw in those from the meta as well
             if (bDeleteNode)
             {
                 SettingStatus eMetaStatus = NotFound;
-                CXMLNode*     pMetaNode = Get(pSource, pStorage, pResource->GetName().c_str(), szLocalResource, szSetting, bDeleteNode, eMetaStatus, pNode);
+                CXMLNode*     pMetaNode = Get(pSource, pStorage, pResource->GetName().c_str(), szLocalResource, szSetting, bDeleteNode, eMetaStatus, false, pNode);
                 if (eMetaStatus == Found)
                 {
                     eStatus = eMetaStatus;
@@ -244,7 +260,7 @@ CXMLNode* CSettings::Get(const char* szLocalResource, const char* szSetting, boo
         {            // Not found, continue searching
             // Try to get the value for the appropriate setting from the resource's meta XML file
             if (pSource)
-                pNode = Get(pSource, pStorage, pResource->GetName().c_str(), szLocalResource, szSetting, bDeleteNode, eStatus);
+                pNode = Get(pSource, pStorage, pResource->GetName().c_str(), szLocalResource, szSetting, bDeleteNode, eStatus, false);
             if (eStatus == Found)
                 return pNode;
         }
@@ -252,7 +268,7 @@ CXMLNode* CSettings::Get(const char* szLocalResource, const char* szSetting, boo
     else
     {
         // Try to get the value for the appropriate setting from the settings registry
-        pNode = Get(m_pNodeGlobalSettings, pStorage, "", szLocalResource, szSetting, bDeleteNode, eStatus);
+        pNode = Get(m_pNodeGlobalSettings, pStorage, "", szLocalResource, szSetting, bDeleteNode, eStatus, true);
         if (eStatus == Found)
             return pNode;
     }
@@ -305,13 +321,13 @@ bool CSettings::Set(const char* szLocalResource, const char* szSetting, const ch
         CXMLNode* pSource = pResource->GetSettingsNode();
 
         // Check whether the setting exists in the settings registry
-        pNode = Get(m_pNodeGlobalSettings, NULL, "", szLocalResource, szSetting, bDeleteNode, eStatus);
+        pNode = Get(m_pNodeGlobalSettings, NULL, "", szLocalResource, szSetting, bDeleteNode, eStatus, true);
         bExists = true;            // Default value
 
         // Try to get the value for the appropriate setting from the resource's meta XML file
         if (eStatus == NotFound && pSource)
         {
-            pNode = Get(pSource, NULL, pResource->GetName().c_str(), szLocalResource, szSetting, bDeleteNode, eStatus);
+            pNode = Get(pSource, NULL, pResource->GetName().c_str(), szLocalResource, szSetting, bDeleteNode, eStatus, false);
             bExists = false;            // There's no node in the settings registry, so we create one
         }
 
@@ -350,7 +366,7 @@ bool CSettings::Set(const char* szLocalResource, const char* szSetting, const ch
 
                 // Abort if this value isnt public (but protected or private), and if the local resource
                 // (doing the query) doesn't equal the setting's resource name
-                if (GetAccessType(pAttributes->Find("name")->GetValue()[0]) != CSettings::Public && stricmp(pResource->GetName().c_str(), szLocalResource) != 0)
+                if (GetAccessType(pAttributes->Find("name")->GetValue()[0], bExists) != CSettings::Public && stricmp(pResource->GetName().c_str(), szLocalResource) != 0)
                     return false;
 
                 // Get the node's current value
@@ -404,18 +420,18 @@ bool CSettings::HasPrefix(char cCharacter)
 }
 
 // Parses the prefix and returns the appropriate access type
-CSettings::AccessType CSettings::GetAccessType(char cCharacter)
+CSettings::AccessType CSettings::GetAccessType(char cCharacter, bool isGlobalSetting)
 {
     switch (cCharacter)
     {
         case SETTINGS_PREFIX_PRIVATE:            // Private variable
             return CSettings::Private;
-        case SETTINGS_PREFIX_PUBLIC:            // Public variable
+        case SETTINGS_PREFIX_PUBLIC:            // Public variable  
             return CSettings::Public;
         case SETTINGS_PREFIX_PROTECTED:            // Protected variable
             return CSettings::Protected;
         default:            // Default variable (as declared in SETTINGS_NO_PREFIX)
-            return SETTINGS_NO_PREFIX;
+            return isGlobalSetting ? CSettings::Public : CSettings::Private;
     }
 }
 

@@ -43,10 +43,10 @@ private:
     };
 
     CXMLNode* Get(CXMLNode* pSource, CXMLNode* pStorage, const char* szSourceResource, const char* szLocalResource, const char* szSetting, bool& bDeleteNode,
-                  SettingStatus& eSetting, CXMLNode* pMultiresultParentNode = NULL);
+                  SettingStatus& eSetting, bool isGlobalSettings = false, CXMLNode* pMultiresultParentNode = NULL);
 
     CXMLNode*             CreateSetting(CXMLNode* pDst, const char* szSetting, const char* szContent);
-    CSettings::AccessType GetAccessType(char cCharacter);
+    CSettings::AccessType GetAccessType(char cCharacter, bool isGlobalSetting = false);
     bool                  HasPrefix(char cCharacter);
     const char*           GetResourceName(const char* szSetting, char* szBuffer, unsigned int uiLength);
     bool                  HasResourceName(const char* szSetting);
