@@ -20,6 +20,8 @@
 #include "CKeyBinds.h"
 #include "CStaticFunctionDefinitions.h"
 #include "net/SyncStructures.h"
+#include "CVehicle.h"
+#include "packets/CElementRPCPacket.h"
 
 CRPCFunctions* g_pRPCFunctions = NULL;
 extern CGame*  g_pGame;
@@ -57,6 +59,7 @@ void CRPCFunctions::AddHandlers()
     AddHandler(KEY_BIND, KeyBind);
     AddHandler(CURSOR_EVENT, CursorEvent);
     AddHandler(REQUEST_STEALTH_KILL, RequestStealthKill);
+    AddHandler(TRIGGER_VEHICLE_DAMAGE_EVENT, TriggerVehicleDamageEvent);
 }
 
 void CRPCFunctions::AddHandler(unsigned char ucID, pfnRPCHandler Callback)
@@ -365,4 +368,56 @@ void CRPCFunctions::RequestStealthKill(NetBitStreamInterface& bitStream)
         }
     }
     UNCLOCK("NetServerPulse::RPC", "RequestStealthKill");
+}
+
+void CRPCFunctions::TriggerVehicleDamageEvent(NetBitStreamInterface& bitStream)
+{
+    CLOCK("NetServerPulse::RPC", "TriggerVehicleDamageEvent");
+
+    ElementID     usVehicleID;
+    float         fLoss;
+    CVector       vecDamagePos;
+    unsigned char ucTyre;
+    ElementID     usAttackerID;
+    unsigned char ucWeaponType;
+
+    if (bitStream.Read(usVehicleID) && bitStream.Read(fLoss) && bitStream.Read(vecDamagePos.fX) && bitStream.Read(vecDamagePos.fY) &&
+        bitStream.Read(vecDamagePos.fZ) && bitStream.Read(ucTyre) && bitStream.Read(usAttackerID) && bitStream.Read(ucWeaponType))
+    {
+        CElement* pVehicleElement = CElementIDs::GetElement(usVehicleID);
+        if (pVehicleElement && IS_VEHICLE(pVehicleElement))
+        {
+            CVehicle* pVehicle = static_cast<CVehicle*>(pVehicleElement);
+            // Verify sender is the driver or syncer of the vehicle
+            if (pVehicle->GetOccupant(0) == m_pSourcePlayer || pVehicle->GetSyncer() == m_pSourcePlayer)
+            {
+                NetBitStreamInterface* pRelayStream = g_pGame->GetNetServer()->AllocateNetBitStream();
+                if (pRelayStream)
+                {
+                    pRelayStream->Write(usVehicleID);
+                    pRelayStream->Write(fLoss);
+                    pRelayStream->Write(vecDamagePos.fX);
+                    pRelayStream->Write(vecDamagePos.fY);
+                    pRelayStream->Write(vecDamagePos.fZ);
+                    pRelayStream->Write(ucTyre);
+                    pRelayStream->Write(usAttackerID);
+                    pRelayStream->Write(ucWeaponType);
+
+                    // Relay RPC to all passengers of the vehicle
+                    for (unsigned int i = 1; i < pVehicle->GetMaxPassengers(); ++i)
+                    {
+                        CPlayer* pPassenger = pVehicle->GetOccupant(i);
+                        if (pPassenger && pPassenger->IsJoined())
+                        {
+                            pPassenger->Send(CElementRPCPacket(pVehicle, TRIGGER_VEHICLE_DAMAGE_EVENT, *pRelayStream));
+                        }
+                    }
+
+                    g_pGame->GetNetServer()->DeallocateNetBitStream(pRelayStream);
+                }
+            }
+        }
+    }
+
+    UNCLOCK("NetServerPulse::RPC", "TriggerVehicleDamageEvent");
 }

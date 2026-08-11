@@ -4865,6 +4865,25 @@ bool CClientGame::VehicleDamageHandler(CEntitySAInterface* pVehicleInterface, fl
         {
             bAllowDamage = false;
         }
+
+        if (fLoss > 0.0f && pClientVehicle->GetOccupant(0) == m_pLocalPlayer)
+        {
+            NetBitStreamInterface* pBitStream = g_pNet->AllocateNetBitStream();
+            if (pBitStream)
+            {
+                pBitStream->Write(pClientVehicle->GetID());
+                pBitStream->Write(fLoss);
+                pBitStream->Write(vecDamagePos.fX);
+                pBitStream->Write(vecDamagePos.fY);
+                pBitStream->Write(vecDamagePos.fZ);
+                pBitStream->Write(ucTyre);
+                pBitStream->Write(pClientAttacker ? pClientAttacker->GetID() : INVALID_ELEMENT_ID);
+                pBitStream->Write(static_cast<unsigned char>(weaponType));
+
+                m_pNetAPI->RPC(TRIGGER_VEHICLE_DAMAGE_EVENT, pBitStream);
+                g_pNet->DeallocateNetBitStream(pBitStream);
+            }
+        }
     }
 
     return bAllowDamage;

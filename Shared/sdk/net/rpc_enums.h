@@ -293,5 +293,7 @@ enum eElementRPCFunctions
 
     SET_ELEMENT_ON_FIRE,
 
+    TRIGGER_VEHICLE_DAMAGE_EVENT,
+
     NUM_RPC_FUNCS  // Add above this line
 };

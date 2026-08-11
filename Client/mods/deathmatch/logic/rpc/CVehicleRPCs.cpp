@@ -54,6 +54,7 @@ void CVehicleRPCs::LoadFunctions()
     AddHandler(SET_VEHICLE_PLATE_TEXT, SetVehiclePlateText, "setVehiclePlateText");
     AddHandler(SPAWN_VEHICLE_FLYING_COMPONENT, SpawnVehicleFlyingComponent, "spawnVehicleFlyingComponent");
     AddHandler(SET_VEHICLE_NITRO_ACTIVATED, SetVehicleNitroActivated, "SetVehicleNitroActivated");
+    AddHandler(TRIGGER_VEHICLE_DAMAGE_EVENT, TriggerVehicleDamageEvent, "triggerVehicleDamageEvent");
 }
 
 void CVehicleRPCs::DestroyAllVehicles(NetBitStreamInterface& bitStream)
@@ -691,4 +692,50 @@ void CVehicleRPCs::SetVehicleNitroActivated(CClientEntity* pSourceEntity, NetBit
         vehicle->SetNitroLevel(vehicle->GetNitroLevel() - 1.0001f);
     else
         vehicle->SetNitroLevel(vehicle->GetNitroLevel() + 1.0001f);
+}
+
+void CVehicleRPCs::TriggerVehicleDamageEvent(CClientEntity* pSource, NetBitStreamInterface& bitStream)
+{
+    float         fLoss;
+    CVector       vecDamagePos;
+    unsigned char ucTyre;
+    ElementID     usAttackerID;
+    unsigned char ucWeaponType;
+
+    if (bitStream.Read(fLoss) && bitStream.Read(vecDamagePos.fX) && bitStream.Read(vecDamagePos.fY) && bitStream.Read(vecDamagePos.fZ) &&
+        bitStream.Read(ucTyre) && bitStream.Read(usAttackerID) && bitStream.Read(ucWeaponType))
+    {
+        CClientVehicle* pVehicle = DynamicCast<CClientVehicle>(pSource);
+        if (pVehicle)
+        {
+            // Do not trigger for the vehicle driver/controller as they already handled it locally via physics hook
+            if (pVehicle->GetOccupant(0) == g_pClientGame->GetLocalPlayer())
+                return;
+
+            CClientEntity* pAttacker = g_pClientGame->GetPools()->GetClientEntity(usAttackerID);
+
+            CLuaArguments Arguments;
+            if (pAttacker)
+                Arguments.PushElement(pAttacker);
+            else
+                Arguments.PushNil();
+
+            if (ucWeaponType != WEAPONTYPE_INVALID && ucWeaponType != 0xFF)
+                Arguments.PushNumber(ucWeaponType);
+            else
+                Arguments.PushNil();
+
+            Arguments.PushNumber(fLoss);
+            Arguments.PushNumber(vecDamagePos.fX);
+            Arguments.PushNumber(vecDamagePos.fY);
+            Arguments.PushNumber(vecDamagePos.fZ);
+
+            if (ucTyre != UCHAR_INVALID_INDEX)
+                Arguments.PushNumber(ucTyre);
+            else
+                Arguments.PushNil();
+
+            pVehicle->CallEvent("onClientVehicleDamage", Arguments, true);
+        }
+    }
 }
