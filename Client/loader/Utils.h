@@ -79,11 +79,11 @@ auto    GetGameLaunchDirectory() -> std::filesystem::path;
 auto    GetGameExecutablePath() -> std::filesystem::path;
 SString GetInstallPathForLauncher();
 
-void            SetMTASAPathSource(bool bReadFromRegistry);
-SString         GetMTASAPath();
-ePathResult     DiscoverGTAPath(bool bFindIfMissing);
-SString         GetGTAPath();
-bool            HasGTAPath();
+void        SetMTASAPathSource(bool bReadFromRegistry);
+SString     GetMTASAPath();
+ePathResult DiscoverGTAPath(bool bFindIfMissing);
+SString     GetGTAPath();
+bool        HasGTAPath();
 
 void           FindFilesRecursive(const SString& strPathMatch, std::vector<SString>& outFileList, uint uiMaxDepth = 99);
 SOSVersionInfo GetOSVersion();

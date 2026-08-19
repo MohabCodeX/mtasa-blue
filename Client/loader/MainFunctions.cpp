@@ -995,7 +995,6 @@ void ConfigureWerDumpPath()
 //////////////////////////////////////////////////////////
 void PreLaunchWatchDogs()
 {
-
     // Check for unclean stop on previous run
 #ifndef MTA_DEBUG
     if (WatchDogIsSectionOpen("L0"))
