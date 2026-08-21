@@ -91,21 +91,23 @@ void CEventsManager::AddHandler(const std::variant<std::uint32_t, BuiltInEvent::
     CTimingBlock* eventTiming = CClientPerfStatLuaTiming::GetSingleton()->GetTimingBlock(luaMain, eventName.data());
     CTimingBlock* resourceTiming = CClientPerfStatLuaTiming::GetSingleton()->GetResourceTimingBlock(luaMain);
 
-    handlersListPtr->push_back(SEventHandler{.luaMain = luaMain,
-                                             .luaFunctionRef = luaFunctionRef,
-                                             .isValid = true,
-                                             .propagate = propagated,
-                                             .priority = priority,
-                                             .priorityMod = priorityMod,
-                                             .entityType = entityType,
-                                             .isRenderingEvent = isRenderingEvent,
-                                             .eventTiming = eventTiming,
-                                             .resourceTiming = resourceTiming});
+    SEventHandler newHandler{.luaMain = luaMain,
+                             .luaFunctionRef = luaFunctionRef,
+                             .isValid = true,
+                             .propagate = propagated,
+                             .priority = priority,
+                             .priorityMod = priorityMod,
+                             .entityType = entityType,
+                             .isRenderingEvent = isRenderingEvent,
+                             .eventTiming = eventTiming,
+                             .resourceTiming = resourceTiming};
 
     if (auto resource = luaMain->GetResource())
         resource->InsertEventHandlerIntoList(sourceEntity, {isCustomEvent, eventIdOrHash, luaFunctionRef});
 
-    std::sort(handlersListPtr->begin(), handlersListPtr->end());
+    // Keep handlers list sorted in O(log N) instead of sorting the entire list on every insertion (O(N log N))
+    auto insertPos = std::upper_bound(handlersListPtr->begin(), handlersListPtr->end(), newHandler);
+    handlersListPtr->insert(insertPos, std::move(newHandler));
 }
 
 bool CEventsManager::RemoveHandler(const std::variant<std::uint32_t, BuiltInEvent::Enum>& event, CClientEntity* sourceEntity, CLuaMain* luaMain,
