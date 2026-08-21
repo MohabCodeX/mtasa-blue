@@ -142,27 +142,31 @@ bool CEventsManager::RemoveHandler(const std::variant<std::uint32_t, BuiltInEven
 
     auto& handlersList = it->second;
     bool  removed = false;
-    bool  isInUse = false;
-
     for (auto handlerIt = handlersList.begin(); handlerIt != handlersList.end(); ++handlerIt)
     {
         if (handlerIt->luaMain == luaMain && handlerIt->luaFunctionRef == luaFunctionRef && handlerIt->isValid)
         {
-            handlerIt->isValid = false;
-            removed = true;
-
             if (handlerIt->isInUse)
-                isInUse = true;
+            {
+                handlerIt->isValid = false;
+            }
+            else
+            {
+                if (auto resource = luaMain->GetResource())
+                    resource->RemoveEventHandlerFromList(sourceEntity, eventIdOrHash, luaFunctionRef);
 
-            break;
+                handlersList.erase(handlerIt);
+                sourceEntity->DecrementEventHandlersCount();
+
+                if (handlersList.empty())
+                    entityMapPtr->erase(it);
+            }
+
+            return true;
         }
     }
 
-    // If the event is currently being executed, it will be removed by the executing loop (ExecuteHandlersForEntity)
-    if (!isInUse && removed)
-        TryRemoveHandler(sourceEntity, handlersList, *entityMapPtr, it, eventIdOrHash);
-
-    return removed;
+    return false;
 }
 
 void CEventsManager::RemoveAllHandlers(CLuaMain* luaMain)
