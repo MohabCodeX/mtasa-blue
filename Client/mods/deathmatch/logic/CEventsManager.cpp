@@ -177,36 +177,17 @@ void CEventsManager::RemoveAllHandlers(CLuaMain* luaMain)
 
         for (const auto& [entity, refs] : handlersMap)
         {
+            // Deduplicate event IDs to avoid doing O(N^2) remove_if passes on the same list
+            std::unordered_set<std::uint32_t> customEventsProcessed;
+            std::unordered_set<std::uint32_t> builtInEventsProcessed;
+
             for (const auto& ref : refs)
             {
                 if (!ref.isCustomEvent)
                 {
-                    auto& handlersList = m_eventsTable[static_cast<std::size_t>(ref.eventIdOrHash)][entity];
-
-                    handlersList.erase(std::remove_if(handlersList.begin(), handlersList.end(),
-                                                      [luaMain, entity](SEventHandler& h)
-                                                      {
-                                                          if (h.luaMain == luaMain)
-                                                          {
-                                                              if (h.isInUse)
-                                                              {
-                                                                  h.isValid = false;
-                                                                  return false;
-                                                              }
-
-                                                              entity->DecrementEventHandlersCount();
-                                                              return true;
-                                                          }
-                                                          return false;
-                                                      }),
-                                       handlersList.end());
-                }
-                else
-                {
-                    auto itCustom = m_customEvents.find(ref.eventIdOrHash);
-                    if (itCustom != m_customEvents.end())
+                    if (builtInEventsProcessed.insert(ref.eventIdOrHash).second)
                     {
-                        auto& handlersList = itCustom->second.handlersTable[entity];
+                        auto& handlersList = m_eventsTable[static_cast<std::size_t>(ref.eventIdOrHash)][entity];
 
                         handlersList.erase(std::remove_if(handlersList.begin(), handlersList.end(),
                                                           [luaMain, entity](SEventHandler& h)
@@ -225,6 +206,35 @@ void CEventsManager::RemoveAllHandlers(CLuaMain* luaMain)
                                                               return false;
                                                           }),
                                            handlersList.end());
+                    }
+                }
+                else
+                {
+                    if (customEventsProcessed.insert(ref.eventIdOrHash).second)
+                    {
+                        auto itCustom = m_customEvents.find(ref.eventIdOrHash);
+                        if (itCustom != m_customEvents.end())
+                        {
+                            auto& handlersList = itCustom->second.handlersTable[entity];
+
+                            handlersList.erase(std::remove_if(handlersList.begin(), handlersList.end(),
+                                                              [luaMain, entity](SEventHandler& h)
+                                                              {
+                                                                  if (h.luaMain == luaMain)
+                                                                  {
+                                                                      if (h.isInUse)
+                                                                      {
+                                                                          h.isValid = false;
+                                                                          return false;
+                                                                      }
+
+                                                                      entity->DecrementEventHandlersCount();
+                                                                      return true;
+                                                                  }
+                                                                  return false;
+                                                              }),
+                                               handlersList.end());
+                        }
                     }
                 }
             }
