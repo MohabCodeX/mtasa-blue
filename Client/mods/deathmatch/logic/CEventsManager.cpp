@@ -8,6 +8,7 @@
 
 #include "StdInc.h"
 #include "CEventsManager.h"
+#include "CClientPerfStatModule.h"
 
 CEventsManager::CEventsManager()
 {
@@ -55,6 +56,7 @@ void CEventsManager::AddHandler(const std::variant<std::uint32_t, BuiltInEvent::
     bool                        isRenderingEvent = false;
     bool                        isCustomEvent = false;
     std::uint32_t               eventIdOrHash = 0;
+    std::string_view            eventName{};
 
     if (std::holds_alternative<BuiltInEvent::Enum>(event))
     {
@@ -62,6 +64,7 @@ void CEventsManager::AddHandler(const std::variant<std::uint32_t, BuiltInEvent::
         handlersListPtr = &m_eventsTable[static_cast<std::size_t>(builtInEnum)][sourceEntity];
 
         eventIdOrHash = static_cast<std::uint32_t>(builtInEnum);
+        eventName = GetEventName(builtInEnum);
 
         isRenderingEvent = builtInEnum == BuiltInEvent::ON_CLIENT_RENDER || builtInEnum == BuiltInEvent::ON_CLIENT_PRE_RENDER ||
                            builtInEnum == BuiltInEvent::ON_CLIENT_HUD_RENDER;
@@ -71,7 +74,10 @@ void CEventsManager::AddHandler(const std::variant<std::uint32_t, BuiltInEvent::
         auto hash = std::get<std::uint32_t>(event);
         auto it = m_customEvents.find(hash);
         if (it != m_customEvents.end())
+        {
             handlersListPtr = &it->second.handlersTable[sourceEntity];
+            eventName = it->second.eventName;
+        }
 
         eventIdOrHash = hash;
         isCustomEvent = true;
@@ -82,6 +88,9 @@ void CEventsManager::AddHandler(const std::variant<std::uint32_t, BuiltInEvent::
 
     sourceEntity->IncrementEventHandlersCount();
 
+    CTimingBlock* eventTiming = CClientPerfStatLuaTiming::GetSingleton()->GetTimingBlock(luaMain, eventName.data());
+    CTimingBlock* resourceTiming = CClientPerfStatLuaTiming::GetSingleton()->GetResourceTimingBlock(luaMain);
+
     handlersListPtr->push_back(SEventHandler{.luaMain = luaMain,
                                              .luaFunctionRef = luaFunctionRef,
                                              .isValid = true,
@@ -89,7 +98,9 @@ void CEventsManager::AddHandler(const std::variant<std::uint32_t, BuiltInEvent::
                                              .priority = priority,
                                              .priorityMod = priorityMod,
                                              .entityType = entityType,
-                                             .isRenderingEvent = isRenderingEvent});
+                                             .isRenderingEvent = isRenderingEvent,
+                                             .eventTiming = eventTiming,
+                                             .resourceTiming = resourceTiming});
 
     if (auto resource = luaMain->GetResource())
         resource->InsertEventHandlerIntoList(sourceEntity, {isCustomEvent, eventIdOrHash, luaFunctionRef});
@@ -459,9 +470,8 @@ void CEventsManager::ExecuteHandlersForEntity(EventHandlersList& handlers, Event
 
         LUA_CHECKSTACK(luaVM, 1);
 
-        TIMEUS startTime = 0;
-        if (IS_TIMING_CHECKPOINTS())
-            startTime = GetTimeUs();
+        const bool   timingActive = CClientPerfStatLuaTiming::GetSingleton()->IsActive();
+        const TIMEUS startTime = (timingActive || IS_TIMING_CHECKPOINTS()) ? GetTimeUs() : 0;
 
         // Record event for the crash dump writer
         if (g_pCore->GetDiagnosticDebug() == EDiagnosticDebug::LUA_TRACE_0000)
@@ -499,11 +509,16 @@ void CEventsManager::ExecuteHandlersForEntity(EventHandlersList& handlers, Event
 
         int result = luaMain->PCall(luaVM, 6 + args.Count(), 0, 0);
         if (result > 1 && result != LUA_ERRSYNTAX)
+        {
             g_pClientGame->GetScriptDebugging()->LogPCallError(luaVM, ConformResourcePath(lua_tostring(luaVM, -1)));
-        else
-            // CClientPerfStatLuaTiming::GetSingleton()->UpdateLuaTiming(luaMain, eventName.data(), GetTimeUs() - startTime);
+        }
+        else if (timingActive)
+        {
+            const TIMEUS deltaTime = GetTimeUs() - startTime;
+            CClientPerfStatLuaTiming::GetSingleton()->UpdateTimingFast(handler.eventTiming, handler.resourceTiming, deltaTime);
+        }
 
-            lua_settop(luaVM, preCallTop);
+        lua_settop(luaVM, preCallTop);
 
         // TODO g_pClientGame->GetDebugHookManager()->OnPostEventFunction
 
