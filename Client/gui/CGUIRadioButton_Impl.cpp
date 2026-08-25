@@ -27,7 +27,11 @@ CGUIRadioButton_Impl::CGUIRadioButton_Impl(CGUI_Impl* pGUI, CGUIElement* pParent
 
     m_pWindow->setText(CGUI_Impl::GetUTFString(szCaption));
 
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setSize(CEGUI::USize(CEGUI::UDim(0.0f, 128.0f), CEGUI::UDim(0.0f, 16.0f)));
+#else
     m_pWindow->setSize(CEGUI::Absolute, CEGUI::Size(128.0f, 16.0f));
+#endif
     m_pWindow->setVisible(true);
 
     // Store the pointer to this CGUI element in the CEGUI element

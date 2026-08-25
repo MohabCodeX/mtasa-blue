@@ -42,7 +42,11 @@ CGUILabel_Impl::CGUILabel_Impl(CGUI_Impl* pGUI, CGUIElement* pParent, const char
     SetHorizontalAlign(CGUI_ALIGN_LEFT);
     SetVerticalAlign(CGUI_ALIGN_TOP);
     SetText(szText);
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setProperty("BackgroundEnabled", "False");
+#else
     reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->setBackgroundEnabled(false);
+#endif
 
     // If a parent is specified, add it to it's children list, if not, add it as a child to the pManager
     if (pParent)
@@ -69,32 +73,95 @@ void CGUILabel_Impl::SetText(const char* Text)
 
 void CGUILabel_Impl::SetVerticalAlign(CGUIVerticalAlign eAlign)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    switch (eAlign)
+    {
+        case CGUI_ALIGN_TOP:
+            m_pWindow->setProperty("VertFormatting", "TopAligned");
+            break;
+        case CGUI_ALIGN_VCENTRE:
+            m_pWindow->setProperty("VertFormatting", "CentreAligned");
+            break;
+        case CGUI_ALIGN_BOTTOM:
+            m_pWindow->setProperty("VertFormatting", "BottomAligned");
+            break;
+    }
+#else
     reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->setVerticalFormatting(static_cast<CEGUI::StaticText::VertFormatting>(eAlign));
+#endif
 }
 
 CGUIVerticalAlign CGUILabel_Impl::GetVerticalAlign()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::String vert = m_pWindow->getProperty("VertFormatting");
+    if (vert == "CentreAligned")
+        return CGUI_ALIGN_VCENTRE;
+    if (vert == "BottomAligned")
+        return CGUI_ALIGN_BOTTOM;
+    return CGUI_ALIGN_TOP;
+#else
     return static_cast<CGUIVerticalAlign>(reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->getVerticalFormatting());
+#endif
 }
 
 void CGUILabel_Impl::SetHorizontalAlign(CGUIHorizontalAlign eAlign)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    switch (eAlign)
+    {
+        case CGUI_ALIGN_LEFT:
+            m_pWindow->setProperty("HorzFormatting", "LeftAligned");
+            break;
+        case CGUI_ALIGN_RIGHT:
+            m_pWindow->setProperty("HorzFormatting", "RightAligned");
+            break;
+        case CGUI_ALIGN_HCENTRE:
+            m_pWindow->setProperty("HorzFormatting", "CentreAligned");
+            break;
+        case CGUI_ALIGN_WORDWRAP:
+            m_pWindow->setProperty("HorzFormatting", "WordWrapLeftAligned");
+            break;
+    }
+#else
     reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->setHorizontalFormatting(static_cast<CEGUI::StaticText::HorzFormatting>(eAlign));
+#endif
 }
 
 CGUIHorizontalAlign CGUILabel_Impl::GetHorizontalAlign()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::String horz = m_pWindow->getProperty("HorzFormatting");
+    if (horz == "RightAligned")
+        return CGUI_ALIGN_RIGHT;
+    if (horz == "CentreAligned")
+        return CGUI_ALIGN_HCENTRE;
+    if (horz == "WordWrapLeftAligned" || horz == "WordWrapRightAligned" || horz == "WordWrapCentreAligned")
+        return CGUI_ALIGN_WORDWRAP;
+    return CGUI_ALIGN_LEFT;
+#else
     return static_cast<CGUIHorizontalAlign>(reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->getHorizontalFormatting());
+#endif
 }
 
 void CGUILabel_Impl::SetTextColor(CGUIColor Color)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::colour col(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
+    m_pWindow->setProperty("TextColours", CEGUI::PropertyHelper<CEGUI::ColourRect>::toString(CEGUI::ColourRect(col)));
+#else
     reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->setTextColours(CEGUI::colour(1.0f / 255.0f * Color.R, 1.0f / 255.0f * Color.G, 1.0f / 255.0f * Color.B));
+#endif
 }
 
 void CGUILabel_Impl::SetTextColor(unsigned char ucRed, unsigned char ucGreen, unsigned char ucBlue)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::colour col(ucRed / 255.0f, ucGreen / 255.0f, ucBlue / 255.0f, 1.0f);
+    m_pWindow->setProperty("TextColours", CEGUI::PropertyHelper<CEGUI::ColourRect>::toString(CEGUI::ColourRect(col)));
+#else
     reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->setTextColours(CEGUI::colour(1.0f / 255.0f * ucRed, 1.0f / 255.0f * ucGreen, 1.0f / 255.0f * ucBlue));
+#endif
 }
 
 CGUIColor CGUILabel_Impl::GetTextColor()
@@ -106,21 +173,37 @@ CGUIColor CGUILabel_Impl::GetTextColor()
 
 void CGUILabel_Impl::GetTextColor(unsigned char& ucRed, unsigned char& ucGreen, unsigned char& ucBlue)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::ColourRect cols = CEGUI::PropertyHelper<CEGUI::ColourRect>::fromString(m_pWindow->getProperty("TextColours"));
+    CEGUI::colour     r = cols.d_top_left;
+    ucRed = static_cast<unsigned char>(r.getRed() * 255);
+    ucGreen = static_cast<unsigned char>(r.getGreen() * 255);
+    ucBlue = static_cast<unsigned char>(r.getBlue() * 255);
+#else
     CEGUI::colour r = (reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->getTextColours()).getColourAtPoint(0, 0);
 
     ucRed = (unsigned char)(r.getRed() * 255);
     ucGreen = (unsigned char)(r.getGreen() * 255);
     ucBlue = (unsigned char)(r.getBlue() * 255);
+#endif
 }
 
 void CGUILabel_Impl::SetFrameEnabled(bool bFrameEnabled)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setProperty("FrameEnabled", bFrameEnabled ? "True" : "False");
+#else
     reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->setFrameEnabled(bFrameEnabled);
+#endif
 }
 
 bool CGUILabel_Impl::IsFrameEnabled()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return m_pWindow->getProperty("FrameEnabled") == "True";
+#else
     return reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->isFrameEnabled();
+#endif
 }
 
 float CGUILabel_Impl::GetCharacterWidth(int iCharIndex)

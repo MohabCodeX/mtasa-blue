@@ -24,7 +24,11 @@ CGUIEdit_Impl::CGUIEdit_Impl(CGUI_Impl* pGUI, CGUIElement* pParent, const char* 
     // Create the edit and set default settings
     m_pWindow = pGUI->GetWindowManager()->createWindow(CGUIEDIT_NAME, szUnique);
     m_pWindow->setDestroyedByParent(false);
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setSize(CEGUI::USize(CEGUI::UDim(0.0f, 128.0f), CEGUI::UDim(0.0f, 24.0f)));
+#else
     m_pWindow->setRect(CEGUI::Absolute, CEGUI::Rect(0.00f, 0.00f, 0.128f, 0.24f));
+#endif
 
     // Store the pointer to this CGUI element in the CEGUI element
     m_pWindow->setUserData(reinterpret_cast<void*>(this));
@@ -118,22 +122,38 @@ unsigned int CGUIEdit_Impl::GetSelectionLength()
 
 void CGUIEdit_Impl::SetCaretIndex(unsigned int uiIndex)
 {
-    return reinterpret_cast<CEGUI::Editbox*>(m_pWindow)->setCaratIndex(uiIndex);
+#ifdef MTA_USE_CEGUI_NEXT
+    reinterpret_cast<CEGUI::Editbox*>(m_pWindow)->setCaretIndex(uiIndex);
+#else
+    reinterpret_cast<CEGUI::Editbox*>(m_pWindow)->setCaratIndex(uiIndex);
+#endif
 }
 
 void CGUIEdit_Impl::SetCaretAtStart()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    reinterpret_cast<CEGUI::Editbox*>(m_pWindow)->setCaretIndex(0);
+#else
     reinterpret_cast<CEGUI::Editbox*>(m_pWindow)->setCaratIndex(0);
+#endif
 }
 
 void CGUIEdit_Impl::SetCaretAtEnd()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    reinterpret_cast<CEGUI::Editbox*>(m_pWindow)->setCaretIndex(GetText().length());
+#else
     reinterpret_cast<CEGUI::Editbox*>(m_pWindow)->setCaratIndex(GetText().length());
+#endif
 }
 
 unsigned int CGUIEdit_Impl::GetCaretIndex()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return static_cast<unsigned int>(reinterpret_cast<CEGUI::Editbox*>(m_pWindow)->getCaretIndex());
+#else
     return static_cast<unsigned int>(reinterpret_cast<CEGUI::Editbox*>(m_pWindow)->getCaratIndex());
+#endif
 }
 
 void CGUIEdit_Impl::SetTextAcceptedHandler(GUI_CALLBACK Callback)

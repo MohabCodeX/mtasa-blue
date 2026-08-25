@@ -27,7 +27,11 @@ CGUICheckBox_Impl::CGUICheckBox_Impl(CGUI_Impl* pGUI, CGUIElement* pParent, cons
 
     m_pWindow->setText(CGUI_Impl::GetUTFString(szCaption));
 
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setSize(CEGUI::USize(CEGUI::UDim(0.0f, 128.0f), CEGUI::UDim(0.0f, 16.0f)));
+#else
     m_pWindow->setSize(CEGUI::Absolute, CEGUI::Size(128.0f, 16.0f));
+#endif
     m_pWindow->setVisible(true);
 
     // Store the pointer to this CGUI element in the CEGUI element
@@ -58,10 +62,18 @@ CGUICheckBox_Impl::~CGUICheckBox_Impl()
 
 void CGUICheckBox_Impl::SetSelected(bool bChecked)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    reinterpret_cast<CEGUI::ToggleButton*>(m_pWindow)->setSelected(bChecked);
+#else
     reinterpret_cast<CEGUI::Checkbox*>(m_pWindow)->setSelected(!bChecked);
+#endif
 }
 
 bool CGUICheckBox_Impl::GetSelected()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return reinterpret_cast<CEGUI::ToggleButton*>(m_pWindow)->isSelected();
+#else
     return !(reinterpret_cast<CEGUI::Checkbox*>(m_pWindow)->isSelected());
+#endif
 }

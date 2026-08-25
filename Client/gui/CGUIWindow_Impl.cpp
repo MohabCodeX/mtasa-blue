@@ -26,14 +26,22 @@ CGUIWindow_Impl::CGUIWindow_Impl(CGUI_Impl* pGUI, CGUIElement* pParent, const ch
     if (!strLayoutFile.empty())
     {
         // Load from XML file
+#ifdef MTA_USE_CEGUI_NEXT
+        m_pWindow = pGUI->GetWindowManager()->loadLayoutFromFile(strLayoutFile);
+#else
         m_pWindow = pGUI->GetWindowManager()->loadWindowLayout(strLayoutFile);
+#endif
     }
 
     if (!m_pWindow)
     {
         // Create new here
         m_pWindow = pGUI->GetWindowManager()->createWindow(CGUIWINDOW_NAME, szUnique);
+#ifdef MTA_USE_CEGUI_NEXT
+        m_pWindow->setArea(CEGUI::URect(CEGUI::UDim(0.10f, 0.0f), CEGUI::UDim(0.10f, 0.0f), CEGUI::UDim(0.60f, 0.0f), CEGUI::UDim(0.90f, 0.0f)));
+#else
         m_pWindow->setRect(CEGUI::Relative, CEGUI::Rect(0.10f, 0.10f, 0.60f, 0.90f));
+#endif
         m_pWindow->setAlpha(0.8f);
 
         // Give the window a caption
@@ -46,11 +54,19 @@ CGUIWindow_Impl::CGUIWindow_Impl(CGUI_Impl* pGUI, CGUIElement* pParent, const ch
     m_pWindow->setUserData(reinterpret_cast<void*>(this));
 
     // Set fixed minimum size to 96x48
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setMinSize(CEGUI::USize(CEGUI::UDim(0.0f, 96.0f), CEGUI::UDim(0.0f, 48.0f)));
+#else
     m_pWindow->setMetricsMode(CEGUI::Absolute);
     m_pWindow->setMinimumSize(CEGUI::Size(96.0f, 48.0f));
+#endif
 
     // Some window specific style options
+#ifdef MTA_USE_CEGUI_NEXT
+    // Titlebar font handled via scheme/looknfeel in 0.8.7
+#else
     reinterpret_cast<CEGUI::FrameWindow*>(m_pWindow)->setTitlebarFont("default-bold-small");
+#endif
 
     // Register our events
     m_pWindow->subscribeEvent(CEGUI::FrameWindow::EventCloseClicked, CEGUI::Event::Subscriber(&CGUIWindow_Impl::Event_OnCloseClick, this));
