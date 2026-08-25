@@ -78,22 +78,38 @@ bool CGUIMemo_Impl::IsReadOnly()
 void CGUIMemo_Impl::EnsureCaratIsVisible()
 {
     CEGUI::MultiLineEditbox* wndMemo = reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow);
+#ifdef MTA_USE_CEGUI_NEXT
+    wndMemo->setCaretIndex((wndMemo->getText()).length());
+#else
     wndMemo->setCaratIndex((wndMemo->getText()).length());
+#endif
 }
 
 unsigned int CGUIMemo_Impl::GetCaretIndex()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return static_cast<unsigned int>(reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->getCaretIndex());
+#else
     return static_cast<unsigned int>(reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->getCaratIndex());
+#endif
 }
 
 void CGUIMemo_Impl::SetCaretIndex(unsigned int uiIndex)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->setCaretIndex(uiIndex);
+#else
     reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->setCaratIndex(uiIndex);
+#endif
 }
 
 float CGUIMemo_Impl::GetVerticalScrollPosition()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->getVertScrollbar();
+#else
     CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->d_vertScrollbar;
+#endif
     if (pScrollbar)
     {
         return pScrollbar->getScrollPosition();
@@ -104,7 +120,11 @@ float CGUIMemo_Impl::GetVerticalScrollPosition()
 
 void CGUIMemo_Impl::SetVerticalScrollPosition(float fPosition)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->getVertScrollbar();
+#else
     CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->d_vertScrollbar;
+#endif
     if (pScrollbar)
     {
         pScrollbar->setScrollPosition(fPosition);
@@ -118,7 +138,11 @@ float CGUIMemo_Impl::GetMaxVerticalScrollPosition()
 
 float CGUIMemo_Impl::GetScrollbarDocumentSize()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->getVertScrollbar();
+#else
     CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->d_vertScrollbar;
+#endif
     if (pScrollbar)
     {
         return pScrollbar->getDocumentSize();
@@ -129,7 +153,11 @@ float CGUIMemo_Impl::GetScrollbarDocumentSize()
 
 float CGUIMemo_Impl::GetScrollbarPageSize()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->getVertScrollbar();
+#else
     CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiLineEditbox*>(m_pWindow)->d_vertScrollbar;
+#endif
     if (pScrollbar)
     {
         return pScrollbar->getPageSize();

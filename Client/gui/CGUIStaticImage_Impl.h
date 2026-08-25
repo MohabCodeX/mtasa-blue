@@ -38,12 +38,17 @@ public:
     eCGUIType GetType() { return CGUI_STATICIMAGE; }
 
 private:
-    class CGUI_Impl*        m_pGUI;
-    bool                    m_bCreatedTexture;
-    CGUITexture_Impl*       m_pTexture;
+    class CGUI_Impl*  m_pGUI;
+    bool              m_bCreatedTexture;
+    CGUITexture_Impl* m_pTexture;
+#ifdef MTA_USE_CEGUI_NEXT
+    std::string         m_strImageName;
+    const CEGUI::Image* m_pImage;
+#else
     CEGUI::ImagesetManager* m_pImagesetManager;
     CEGUI::Imageset*        m_pImageset;
     const CEGUI::Image*     m_pImage;
+#endif
 
 #include "CGUIElement_Inc.h"
 };

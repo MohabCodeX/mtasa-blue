@@ -16,9 +16,13 @@
 CGUIStaticImage_Impl::CGUIStaticImage_Impl(CGUI_Impl* pGUI, CGUIElement* pParent)
 {
     // Initialize
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pImage = NULL;
+#else
     m_pImagesetManager = pGUI->GetImageSetManager();
     m_pImageset = NULL;
     m_pImage = NULL;
+#endif
     m_pGUI = pGUI;
     SetManager(pGUI);
     m_pTexture = NULL;
@@ -31,8 +35,13 @@ CGUIStaticImage_Impl::CGUIStaticImage_Impl(CGUI_Impl* pGUI, CGUIElement* pParent
     // Create the control and set default properties
     m_pWindow = pGUI->GetWindowManager()->createWindow(CGUISTATICIMAGE_NAME, szUnique);
     m_pWindow->setDestroyedByParent(false);
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setSize(CEGUI::USize(CEGUI::UDim(1.0f, 0.0f), CEGUI::UDim(1.0f, 0.0f)));
+    m_pWindow->setProperty("BackgroundEnabled", "False");
+#else
     m_pWindow->setRect(CEGUI::Relative, CEGUI::Rect(0.0f, 0.0f, 1.0f, 1.0f));
     reinterpret_cast<CEGUI::StaticImage*>(m_pWindow)->setBackgroundEnabled(false);
+#endif
 
     // Store the pointer to this CGUI element in the CEGUI element
     m_pWindow->setUserData(reinterpret_cast<void*>(this));
@@ -80,6 +89,63 @@ bool CGUIStaticImage_Impl::LoadFromTexture(CGUITexture* pTexture)
     if (!pTexture)
         return false;
 
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pTexture && pTexture != m_pTexture)
+    {
+        m_pWindow->setProperty("Image", "");
+        if (!m_strImageName.empty() && CEGUI::ImageManager::getSingleton().isDefined(m_strImageName))
+        {
+            CEGUI::ImageManager::getSingleton().destroy(m_strImageName);
+            m_strImageName.clear();
+        }
+        m_pImage = nullptr;
+        if (m_bCreatedTexture)
+        {
+            delete m_pTexture;
+            m_pTexture = NULL;
+            m_bCreatedTexture = false;
+        }
+    }
+
+    m_pTexture = (CGUITexture_Impl*)pTexture;
+
+    // Get CEGUI texture
+    CEGUI::Texture* pCEGUITexture = m_pTexture->GetTexture();
+    if (!pCEGUITexture)
+        return false;
+
+    char szUnique[CGUI_CHAR_SIZE];
+    m_pGUI->GetUniqueName(szUnique);
+
+    try
+    {
+        if (!m_strImageName.empty() && CEGUI::ImageManager::getSingleton().isDefined(m_strImageName))
+        {
+            CEGUI::ImageManager::getSingleton().destroy(m_strImageName);
+            m_strImageName.clear();
+        }
+
+        while (CEGUI::ImageManager::getSingleton().isDefined(szUnique))
+            m_pGUI->GetUniqueName(szUnique);
+
+        m_strImageName = szUnique;
+        CEGUI::BasicImage* pBasicImage = static_cast<CEGUI::BasicImage*>(&CEGUI::ImageManager::getSingleton().create("BasicImage", m_strImageName));
+        pBasicImage->setTexture(pCEGUITexture);
+        pBasicImage->setArea(CEGUI::Rectf(0.0f, 0.0f, pCEGUITexture->getWidth(), pCEGUITexture->getHeight()));
+        m_pImage = pBasicImage;
+
+        m_pWindow->setProperty("Image", m_strImageName);
+    }
+    catch (const CEGUI::Exception& e)
+    {
+        OutputDebugLine(SString("CGUIStaticImage_Impl::LoadFromTexture failed: %s", e.getMessage().c_str()));
+        m_pWindow->setProperty("Image", "");
+        m_pImage = nullptr;
+        return false;
+    }
+
+    return true;
+#else
     if (m_pTexture && pTexture != m_pTexture)
     {
         // The widget and its imageset keep references to the old texture, so
@@ -148,10 +214,27 @@ bool CGUIStaticImage_Impl::LoadFromTexture(CGUITexture* pTexture)
 
     // Success
     return true;
+#endif
 }
 
 void CGUIStaticImage_Impl::Clear()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setProperty("Image", "");
+    if (!m_strImageName.empty() && CEGUI::ImageManager::getSingleton().isDefined(m_strImageName))
+    {
+        CEGUI::ImageManager::getSingleton().destroy(m_strImageName);
+        m_strImageName.clear();
+    }
+    m_pImage = nullptr;
+
+    if (m_bCreatedTexture)
+    {
+        delete m_pTexture;
+        m_pTexture = nullptr;
+        m_bCreatedTexture = false;
+    }
+#else
     // Stop the control from using it
     reinterpret_cast<CEGUI::StaticImage*>(m_pWindow)->setImage(NULL);
 
@@ -172,6 +255,7 @@ void CGUIStaticImage_Impl::Clear()
         m_pTexture = nullptr;
         m_bCreatedTexture = false;
     }
+#endif
 }
 
 bool CGUIStaticImage_Impl::GetNativeSize(CVector2D& vecSize)
@@ -190,20 +274,36 @@ bool CGUIStaticImage_Impl::GetNativeSize(CVector2D& vecSize)
 
 void CGUIStaticImage_Impl::SetFrameEnabled(bool bFrameEnabled)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setProperty("FrameEnabled", bFrameEnabled ? "True" : "False");
+#else
     reinterpret_cast<CEGUI::StaticImage*>(m_pWindow)->setFrameEnabled(bFrameEnabled);
+#endif
 }
 
 bool CGUIStaticImage_Impl::IsFrameEnabled()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return m_pWindow->getProperty("FrameEnabled") == "True";
+#else
     return reinterpret_cast<CEGUI::StaticImage*>(m_pWindow)->isFrameEnabled();
+#endif
 }
 
 CEGUI::Image* CGUIStaticImage_Impl::GetDirectImage()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return const_cast<CEGUI::Image*>(m_pImage);
+#else
     return const_cast<CEGUI::Image*>(reinterpret_cast<CEGUI::StaticImage*>(m_pWindow)->getImage());
+#endif
 }
 
 void CGUIStaticImage_Impl::Render()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return m_pWindow->render();
+#else
     return reinterpret_cast<CEGUI::StaticImage*>(m_pWindow)->render();
+#endif
 }
