@@ -19,7 +19,7 @@ project "CEGUI-0.8.7"
 	}
 
 	vpaths {
-		["Headers/*"] = "include/**.h",
+		["Headers/*"] = { "include/**.h", "src/**.inl" },
 		["Sources/*"] = "src/**.cpp",
 		["Sources/*"] = "src/**.c",
 		["*"] = "premake5.lua"
@@ -29,12 +29,12 @@ project "CEGUI-0.8.7"
 		"premake5.lua",
 		"src/**.cpp",
 		"src/**.c",
+		"src/**.inl",
 		"include/**.h",
 	}
 
 	excludes {
 		"src/minibidi.cpp",
-		"src/RendererModules/**",
 		"src/ScriptModules/**",
 		"src/ImageCodecModules/**",
 		"src/PCRERegexMatcher.cpp",
@@ -51,5 +51,12 @@ project "CEGUI-0.8.7"
 		flags { "ExcludeFromBuild" }
 
 	filter {"system:windows"}
-		linkoptions { "/ignore:4221" }
-		disablewarnings { "4221" }
+		includedirs {
+			path.join(dxdir, "Include")
+		}
+		libdirs {
+			path.join(dxdir, "Lib/x86")
+		}
+		links { "d3d9", "d3dx9" }
+		linkoptions { "/ignore:4221", "/ignore:4006" }
+		disablewarnings { "4221", "4006" }
