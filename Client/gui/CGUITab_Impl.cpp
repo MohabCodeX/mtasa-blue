@@ -36,7 +36,11 @@ CGUITab_Impl::CGUITab_Impl(CGUI_Impl* pGUI, CGUIElement_Impl* pParent, const cha
         SetParent(pParent);
 
         // Adjust the tab button (pParent should be a TabControl!)
+#ifdef MTA_USE_CEGUI_NEXT
+        reinterpret_cast<CEGUI::TabControl*>(((CGUITabPanel_Impl*)pParent)->m_pWindow)->setTabHeight(CEGUI::UDim(0.0f, 24.0f));
+#else
         reinterpret_cast<CEGUI::TabControl*>(((CGUITabPanel_Impl*)pParent)->m_pWindow)->setAbsoluteTabHeight(24.0f);
+#endif
     }
     else
     {
@@ -64,7 +68,11 @@ void CGUITab_Impl::SetVisible(bool bVisible)
     CGUIElement_Impl*  pParent = static_cast<CGUIElement_Impl*>(m_pParent);
     CEGUI::TabControl* pControl = reinterpret_cast<CEGUI::TabControl*>(((CGUITabPanel_Impl*)pParent)->m_pWindow);
     pControl->getButtonForTabContents(m_pWindow)->setVisible(bVisible);
+#ifdef MTA_USE_CEGUI_NEXT
+    pControl->performChildWindowLayout();
+#else
     pControl->requestChildWindowLayout();
+#endif
 }
 
 bool CGUITab_Impl::IsVisible()

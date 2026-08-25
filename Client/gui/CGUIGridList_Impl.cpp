@@ -72,7 +72,11 @@ CGUIGridList_Impl::CGUIGridList_Impl(CGUI_Impl* pGUI, CGUIElement* pParent, bool
         m_pWindow = pGUI->GetWindowManager()->createWindow(kGridListNoFrameName, szUnique);
 
     m_pWindow->setDestroyedByParent(false);
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->setArea(CEGUI::URect(CEGUI::UDim(0.00f, 0.0f), CEGUI::UDim(0.00f, 0.0f), CEGUI::UDim(0.40f, 0.0f), CEGUI::UDim(0.40f, 0.0f)));
+#else
     m_pWindow->setRect(CEGUI::Relative, CEGUI::Rect(0.00f, 0.00f, 0.40f, 0.40f));
+#endif
 
     reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->setUserColumnDraggingEnabled(false);
     reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->setShowHorzScrollbar(false);
@@ -196,8 +200,13 @@ bool CGUIGridList_Impl::GetColumnWidth(int hColumn, float& fOutWidth, bool bRela
     {
         fOutWidth = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->getColumnHeaderWidth(GetColumnIndex(hColumn));
 
+#ifdef MTA_USE_CEGUI_NEXT
+        if (!bRelative)
+            fOutWidth = fOutWidth * m_pWindow->getPixelSize().d_width;
+#else
         if (!bRelative)
             fOutWidth = m_pWindow->relativeToAbsoluteX(fOutWidth);
+#endif
 
         return true;
     }
@@ -591,7 +600,11 @@ float CGUIGridList_Impl::GetHorizontalScrollPosition()
 {
     try
     {
+#ifdef MTA_USE_CEGUI_NEXT
+        CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->getHorzScrollbar();
+#else
         CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->d_horzScrollbar;
+#endif
         if (pScrollbar)
             return (pScrollbar->getScrollPosition() / (pScrollbar->getDocumentSize() - pScrollbar->getPageSize()));
     }
@@ -605,7 +618,11 @@ float CGUIGridList_Impl::GetVerticalScrollPosition()
 {
     try
     {
+#ifdef MTA_USE_CEGUI_NEXT
+        CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->getVertScrollbar();
+#else
         CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->d_vertScrollbar;
+#endif
         if (pScrollbar)
             return (pScrollbar->getScrollPosition() / (pScrollbar->getDocumentSize() - pScrollbar->getPageSize()));
     }
@@ -619,7 +636,11 @@ void CGUIGridList_Impl::SetHorizontalScrollPosition(float fPosition)
 {
     try
     {
+#ifdef MTA_USE_CEGUI_NEXT
+        CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->getHorzScrollbar();
+#else
         CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->d_horzScrollbar;
+#endif
         if (pScrollbar)
             pScrollbar->setScrollPosition(fPosition * (pScrollbar->getDocumentSize() - pScrollbar->getPageSize()));
     }
@@ -632,7 +653,11 @@ void CGUIGridList_Impl::SetVerticalScrollPosition(float fPosition)
 {
     try
     {
+#ifdef MTA_USE_CEGUI_NEXT
+        CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->getVertScrollbar();
+#else
         CEGUI::Scrollbar* pScrollbar = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->d_vertScrollbar;
+#endif
         if (pScrollbar)
             pScrollbar->setScrollPosition(fPosition * (pScrollbar->getDocumentSize() - pScrollbar->getPageSize()));
     }
@@ -773,7 +798,11 @@ void CGUIGridList_Impl::SetSelectedItem(int iRow, int hColumn, bool bReset)
         // grid settings for full row select, etc...
         reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->setItemSelectState(reinterpret_cast<CGUIListItem_Impl*>(pItem)->GetListItem(), true);
 
+#ifdef MTA_USE_CEGUI_NEXT
+        reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->invalidate();
+#else
         reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->requestRedraw();
+#endif
     }
 }
 

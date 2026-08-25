@@ -17,6 +17,16 @@
 class CGUIStaticImage;
 class CGUIStaticImage_Impl;
 
+#ifdef MTA_USE_CEGUI_NEXT
+class CGUIListboxNumberItem : public CEGUI::ListboxTextItem
+{
+public:
+    using CEGUI::ListboxTextItem::ListboxTextItem;
+    bool operator<(const CEGUI::ListboxItem& rhs) const override { return atoi(getText().c_str()) < atoi(rhs.getText().c_str()); }
+    bool operator>(const CEGUI::ListboxItem& rhs) const override { return atoi(getText().c_str()) > atoi(rhs.getText().c_str()); }
+};
+#endif
+
 class CGUIListItem_Impl : public CGUIListItem
 {
 public:
