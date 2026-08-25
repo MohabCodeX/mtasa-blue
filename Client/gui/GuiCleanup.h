@@ -10,7 +10,11 @@
  *****************************************************************************/
 #pragma once
 
-#include <CEGUI.h>
+#ifdef MTA_USE_CEGUI_NEXT
+    #include <CEGUI/CEGUI.h>
+#else
+    #include <CEGUI.h>
+#endif
 #include "CGUIElement_Impl.h"
 
 inline void DestroyGuiWindowRecursive(CEGUI::Window* pWindow)

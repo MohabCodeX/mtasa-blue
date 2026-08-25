@@ -22,7 +22,11 @@ CGUIListItem_Impl::CGUIListItem_Impl(const char* szText, unsigned int uiType, CG
             m_pListItem = new CEGUI::ListboxTextItem(CGUI_Impl::GetUTFString(szText));
             break;
         case ImageItem:
+#ifdef MTA_USE_CEGUI_NEXT
+            m_pListItem = new CGUIListboxImageItem(pImage ? pImage->GetDirectImage() : NULL);
+#else
             m_pListItem = new CEGUI::ListboxImageItem(pImage ? pImage->GetDirectImage() : NULL);
+#endif
             break;
         case NumberItem:
 #ifdef MTA_USE_CEGUI_NEXT
@@ -92,7 +96,11 @@ void CGUIListItem_Impl::SetImage(CGUIStaticImage* pImage)
     if (ItemType == ImageItem)
     {
         CGUIStaticImage_Impl* pImageImpl = (CGUIStaticImage_Impl*)pImage;
+#ifdef MTA_USE_CEGUI_NEXT
+        reinterpret_cast<CGUIListboxImageItem*>(m_pListItem)->setImage(pImageImpl ? pImageImpl->GetDirectImage() : NULL);
+#else
         reinterpret_cast<CEGUI::ListboxImageItem*>(m_pListItem)->setImage(pImageImpl ? pImageImpl->GetDirectImage() : NULL);
+#endif
     }
 }
 

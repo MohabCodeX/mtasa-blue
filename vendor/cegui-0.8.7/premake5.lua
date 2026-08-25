@@ -15,7 +15,8 @@ project "CEGUI-0.8.7"
 	defines {
 		"CEGUIBASE_EXPORTS",
 		"CEGUI_STATIC",
-		"STATIC_BUILD"
+		"STATIC_BUILD",
+		"CEGUI_BUILD_STATIC_FACTORY_MODULE"
 	}
 
 	vpaths {

@@ -69,8 +69,10 @@ namespace CEGUI
         // default to plain ItemRenderingArea
         if (wlf.isNamedAreaDefined(area_name))
             return wlf.getNamedArea(area_name).getArea().getPixelRect(*lb);
-        else
+        else if (wlf.isNamedAreaDefined(alternate_name))
             return wlf.getNamedArea(alternate_name).getArea().getPixelRect(*lb);
+
+        return Rectf(Vector2f(0.0f, 0.0f), lb->getPixelSize());
     }
 
     void FalagardListbox::resizeListToContent(bool fit_width,

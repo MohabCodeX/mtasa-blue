@@ -313,7 +313,7 @@ void Direct3D9Renderer::beginRendering()
     d_device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
     d_device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
     d_device->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
-    d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
+    d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
     d_device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
 
     // setup texture addressing settings

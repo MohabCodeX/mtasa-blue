@@ -12,7 +12,12 @@
 #pragma once
 
 #include <gui/CGUIListItem.h>
-#include <CEGUI.h>
+
+#ifdef MTA_USE_CEGUI_NEXT
+    #include <CEGUI/CEGUI.h>
+#else
+    #include <CEGUI.h>
+#endif
 
 class CGUIStaticImage;
 class CGUIStaticImage_Impl;
@@ -24,6 +29,36 @@ public:
     using CEGUI::ListboxTextItem::ListboxTextItem;
     bool operator<(const CEGUI::ListboxItem& rhs) const override { return atoi(getText().c_str()) < atoi(rhs.getText().c_str()); }
     bool operator>(const CEGUI::ListboxItem& rhs) const override { return atoi(getText().c_str()) > atoi(rhs.getText().c_str()); }
+};
+
+class CGUIListboxImageItem : public CEGUI::ListboxItem
+{
+public:
+    CGUIListboxImageItem(const CEGUI::Image* image, unsigned int item_id = 0, void* item_data = nullptr, bool disabled = false, bool auto_delete = true)
+        : CEGUI::ListboxItem("", item_id, item_data, disabled, auto_delete), d_image(image)
+    {
+    }
+
+    const CEGUI::Image* getImage() const { return d_image; }
+    void                setImage(const CEGUI::Image* image) { d_image = image; }
+
+    CEGUI::Sizef getPixelSize() const override { return d_image ? d_image->getRenderedSize() : CEGUI::Sizef(0.0f, 0.0f); }
+
+    void draw(CEGUI::GeometryBuffer& buffer, const CEGUI::Rectf& targetRect, float alpha, const CEGUI::Rectf* clipper) const override
+    {
+        if (d_selected && d_selectBrush != 0)
+            d_selectBrush->render(buffer, targetRect, clipper, getModulateAlphaColourRect(d_selectCols, alpha));
+
+        if (d_image)
+        {
+            CEGUI::Rectf finalRect(targetRect);
+            finalRect.setSize(d_image->getRenderedSize());
+            d_image->render(buffer, finalRect, clipper, getModulateAlphaColourRect(CEGUI::ColourRect(0xFFFFFFFF), alpha));
+        }
+    }
+
+protected:
+    const CEGUI::Image* d_image;
 };
 #endif
 

@@ -80,7 +80,7 @@ const String GUIContext::EventDefaultFontChanged("DefaultFontChanged");
 GUIContext::GUIContext(RenderTarget& target) :
     RenderingSurface(target),
     d_rootWindow(0),
-    d_isDirty(false),
+    d_isDirty(true),
     d_mouseMovementScalingFactor(1.0f),
     d_generateMouseClickEvents(true),
     d_mouseButtonClickTimeout(DefaultMouseButtonClickTimeout),
@@ -146,6 +146,7 @@ void GUIContext::setRootWindow(Window* new_root)
     {
         d_rootWindow->setGUIContext(this);
         d_rootWindow->syncTargetSurface();
+        markAsDirty();
     }
 
     onRootWindowChanged(args);

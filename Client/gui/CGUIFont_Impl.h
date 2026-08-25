@@ -12,7 +12,12 @@
 #pragma once
 
 #include <gui/CGUIFont.h>
-#include <CEGUI.h>
+
+#ifdef MTA_USE_CEGUI_NEXT
+    #include <CEGUI/CEGUI.h>
+#else
+    #include <CEGUI.h>
+#endif
 
 class CGUIFont_Impl : public CGUIFont
 {

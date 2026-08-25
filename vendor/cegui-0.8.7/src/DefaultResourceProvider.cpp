@@ -135,6 +135,14 @@ String DefaultResourceProvider::getFinalFilename(
                                             const String& filename,
                                             const String& resourceGroup) const
 {
+#if defined(__WIN32__) || defined(_WIN32)
+    if (filename.length() >= 2 && (filename[1] == ':' || filename[0] == '\\' || filename[0] == '/'))
+        return filename;
+#else
+    if (filename.length() >= 1 && filename[0] == '/')
+        return filename;
+#endif
+
     String final_filename;
 
     // look up resource group directory

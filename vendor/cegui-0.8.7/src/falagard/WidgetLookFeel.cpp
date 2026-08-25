@@ -149,6 +149,27 @@ const ImagerySection& WidgetLookFeel::getImagerySection(
 }
 
 //---------------------------------------------------------------------------//
+bool WidgetLookFeel::isImagerySectionDefined(const String& section) const
+{
+    ImageryList::const_iterator imgSect = d_imagerySections.find(section);
+
+    if (imgSect != d_imagerySections.end())
+        return true;
+
+    if (d_inheritedLookName.empty())
+        return false;
+
+    return WidgetLookManager::getSingleton().
+        getWidgetLook(d_inheritedLookName).isImagerySectionDefined(section);
+}
+
+//---------------------------------------------------------------------------//
+bool WidgetLookFeel::isImagerySectionPresent(const String& section) const
+{
+    return isImagerySectionDefined(section);
+}
+
+//---------------------------------------------------------------------------//
 const String& WidgetLookFeel::getName() const
 {
     return d_lookName;

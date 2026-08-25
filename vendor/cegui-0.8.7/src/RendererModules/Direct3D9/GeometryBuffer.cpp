@@ -82,17 +82,35 @@ void Direct3D9GeometryBuffer::draw() const
         BatchList::const_iterator i = d_batches.begin();
         for ( ; i != d_batches.end(); ++i)
         {
-            if (i->clip)
+            if (i->clip && (clip.right > clip.left) && (clip.bottom > clip.top))
+            {
+                d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
                 d_device->SetScissorRect(&clip);
+            }
+            else
+            {
+                d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+            }
 
-            d_device->SetTexture(0, i->texture);
+            if (i->texture)
+            {
+                d_device->SetTexture(0, i->texture);
+                d_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+                d_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+            }
+            else
+            {
+                d_device->SetTexture(0, NULL);
+                d_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG2);
+                d_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+            }
+
             d_device->DrawPrimitiveUP(D3DPT_TRIANGLELIST, i->vertexCount / 3,
                                     &d_vertices[pos], sizeof(D3DVertex));
             pos += i->vertexCount;
-
-            if (i->clip)
-                d_device->SetScissorRect(&saved_clip);
         }
+
+        d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
     }
 
     // clean up RenderEffect
@@ -152,8 +170,8 @@ void Direct3D9GeometryBuffer::appendGeometry(const Vertex* const vbuff,
     {
         // copy vertex info the buffer, converting from CEGUI::Vertex to
         // something directly usable by D3D as needed.
-        vd.x       = vs->position.d_x - 0.5f;
-        vd.y       = vs->position.d_y - 0.5f;
+        vd.x       = vs->position.d_x;
+        vd.y       = vs->position.d_y;
         vd.z       = vs->position.d_z;
         vd.diffuse = vs->colour_val.getARGB();
         vd.tu      = vs->tex_coords.d_x;

@@ -59,7 +59,7 @@ namespace CEGUI
 #ifdef MTA_USE_CEGUI_NEXT
     class GUIContext;
     class Window;
-    typedef Window DefaultWindow;
+    class DefaultWindow;
 #else
     class GUISheet;
     typedef GUISheet DefaultWindow;
@@ -177,7 +177,11 @@ public:
     CGUIFont* GetSAHeaderFont();
     CGUIFont* GetSAGothicFont();
     CGUIFont* GetSansFont();
-    bool      IsFontPresent(const char* szFont) { return m_pFontManager->isFontPresent(szFont); }
+#ifdef MTA_USE_CEGUI_NEXT
+    bool IsFontPresent(const char* szFont) { return m_pFontManager->isDefined(szFont); }
+#else
+    bool IsFontPresent(const char* szFont) { return m_pFontManager->isFontPresent(szFont); }
+#endif
 
     float GetTextExtent(const char* szText, const char* szFont = "default-normal");
     float GetMaxTextExtent(SString strFont, SString arg, ...);

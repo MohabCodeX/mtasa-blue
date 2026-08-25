@@ -181,7 +181,11 @@ bool CGUIComboBox_Impl::SetItemText(int index, const char* szText)
     try
     {
         CEGUI::ListboxItem* pItem = reinterpret_cast<CEGUI::Combobox*>(m_pWindow)->getListboxItemFromIndex(index);
+#ifdef MTA_USE_CEGUI_NEXT
+        pItem->setText(CGUI_Impl::GetUTFString(szText));
+#else
         pItem->setText(CGUI_Impl::GetUTFString(szText), NULL);
+#endif
         if (pItem->isSelected())  // if this is currently selected, let's update the editbox.
         {
             m_pWindow->setText(CGUI_Impl::GetUTFString(szText));

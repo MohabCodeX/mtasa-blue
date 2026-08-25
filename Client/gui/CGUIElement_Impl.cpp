@@ -10,7 +10,11 @@
  *****************************************************************************/
 
 #include "StdInc.h"
-#include "CGUI_Impl.h"
+#include <core/CCoreInterface.h>
+
+#ifdef MTA_USE_CEGUI_NEXT
+    #include <CEGUI/CoordConverter.h>
+#endif
 
 // Define no-drawing zones, a.k.a. the inside borders in the FrameWindow of BlueLook in pixels
 // If something is drawn inside of these areas, the theme border is drawn on top of it
@@ -157,7 +161,7 @@ CVector2D CGUIElement_Impl::GetPosition(bool bRelative)
             CEGUI::Sizef parentSize = pParent->getPixelSize();
             if (parentSize.d_width != 0.0f && parentSize.d_height != 0.0f)
             {
-                CEGUI::Vector2f absPos = m_pWindow->getPosition().asAbsolute(parentSize);
+                CEGUI::Vector2f absPos = CEGUI::CoordConverter::asAbsolute(m_pWindow->getPosition(), parentSize);
                 return CVector2D(absPos.d_x / parentSize.d_width, absPos.d_y / parentSize.d_height);
             }
         }
@@ -166,7 +170,7 @@ CVector2D CGUIElement_Impl::GetPosition(bool bRelative)
     else
     {
         CEGUI::Window*  pParent = m_pWindow->getParent();
-        CEGUI::Vector2f absPos = m_pWindow->getPosition().asAbsolute(pParent ? pParent->getPixelSize() : CEGUI::Sizef(0.0f, 0.0f));
+        CEGUI::Vector2f absPos = CEGUI::CoordConverter::asAbsolute(m_pWindow->getPosition(), pParent ? pParent->getPixelSize() : CEGUI::Sizef(0.0f, 0.0f));
         return CVector2D(absPos.d_x, absPos.d_y);
     }
 #else
@@ -326,7 +330,7 @@ CVector2D CGUIElement_Impl::GetMinimumSize()
 {
 #ifdef MTA_USE_CEGUI_NEXT
     CEGUI::Window* pParent = m_pWindow->getParent();
-    CEGUI::Sizef   minSize = m_pWindow->getMinSize().asAbsolute(pParent ? pParent->getPixelSize() : CEGUI::Sizef(0.0f, 0.0f));
+    CEGUI::Sizef   minSize = CEGUI::CoordConverter::asAbsolute(m_pWindow->getMinSize(), pParent ? pParent->getPixelSize() : CEGUI::Sizef(0.0f, 0.0f));
     return CVector2D(minSize.d_width, minSize.d_height);
 #else
     const CEGUI::Size& TempSize = m_pWindow->getMinimumSize();
@@ -358,7 +362,7 @@ CVector2D CGUIElement_Impl::GetMaximumSize()
 {
 #ifdef MTA_USE_CEGUI_NEXT
     CEGUI::Window* pParent = m_pWindow->getParent();
-    CEGUI::Sizef   maxSize = m_pWindow->getMaxSize().asAbsolute(pParent ? pParent->getPixelSize() : CEGUI::Sizef(0.0f, 0.0f));
+    CEGUI::Sizef   maxSize = CEGUI::CoordConverter::asAbsolute(m_pWindow->getMaxSize(), pParent ? pParent->getPixelSize() : CEGUI::Sizef(0.0f, 0.0f));
     return CVector2D(maxSize.d_width, maxSize.d_height);
 #else
     const CEGUI::Size& TempSize = m_pWindow->getMaximumSize();
@@ -535,7 +539,7 @@ void CGUIElement_Impl::CorrectEdges()
 
     if (m_pWindow->getParent()->getType() == "CGUI/FrameWindow")
     {
-        CEGUI::Vector2f currentPoint = m_pWindow->getPosition().asAbsolute(m_pWindow->getParent()->getPixelSize());
+        CEGUI::Vector2f currentPoint = CEGUI::CoordConverter::asAbsolute(m_pWindow->getPosition(), m_pWindow->getParent()->getPixelSize());
         CEGUI::Sizef    currentSize = m_pWindow->getPixelSize();
         CEGUI::Sizef    parentSize = m_pWindow->getParent()->getPixelSize();
 
@@ -646,7 +650,11 @@ std::string CGUIElement_Impl::GetProperty(const char* szProperty)
 
 void CGUIElement_Impl::FillProperties()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::PropertySet::PropertyIterator itPropertySet = ((CEGUI::PropertySet*)m_pWindow)->getPropertyIterator();
+#else
     CEGUI::Window::PropertyIterator itPropertySet = ((CEGUI::PropertySet*)m_pWindow)->getIterator();
+#endif
     while (!itPropertySet.isAtEnd())
     {
         CEGUI::String strKey = itPropertySet.getCurrentKey();
@@ -915,5 +923,9 @@ bool CGUIElement_Impl::Event_OnKeyDown(const CEGUI::EventArgs& e)
 
 inline void CGUIElement_Impl::ForceRedraw()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pWindow->invalidate();
+#else
     m_pWindow->forceRedraw();
+#endif
 }

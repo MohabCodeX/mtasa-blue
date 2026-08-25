@@ -693,8 +693,22 @@ bool FalagardStaticText::handleFontRenderSizeChange(const Font* const font)
             return wlf.getNamedArea(area_name).getArea().getPixelRect(*d_window);
         }
 
-        // default to plain WithFrameTextRenderArea
-        return wlf.getNamedArea("WithFrameTextRenderArea").getArea().getPixelRect(*d_window);
+        if (wlf.isNamedAreaDefined("WithFrameTextRenderArea"))
+            return wlf.getNamedArea("WithFrameTextRenderArea").getArea().getPixelRect(*d_window);
+
+        if (wlf.isNamedAreaDefined("NoFrameTextRenderArea"))
+            return wlf.getNamedArea("NoFrameTextRenderArea").getArea().getPixelRect(*d_window);
+
+        if (wlf.isNamedAreaDefined("TextRenderArea"))
+            return wlf.getNamedArea("TextRenderArea").getArea().getPixelRect(*d_window);
+
+        if (wlf.isNamedAreaDefined("TextArea"))
+            return wlf.getNamedArea("TextArea").getArea().getPixelRect(*d_window);
+
+        if (wlf.isNamedAreaDefined("MainArea"))
+            return wlf.getNamedArea("MainArea").getArea().getPixelRect(*d_window);
+
+        return Rectf(Vector2f(0.0f, 0.0f), d_window->getPixelSize());
     }
 
     /************************************************************************

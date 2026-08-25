@@ -11,6 +11,10 @@
 
 #include "StdInc.h"
 
+#ifdef MTA_USE_CEGUI_NEXT
+    #include <CEGUI/PropertyHelper.h>
+#endif
+
 #define CGUILABEL_NAME "CGUI/StaticText"
 
 CGUILabel_Impl::CGUILabel_Impl(CGUI_Impl* pGUI, CGUIElement* pParent, const char* szText)
@@ -79,7 +83,7 @@ void CGUILabel_Impl::SetVerticalAlign(CGUIVerticalAlign eAlign)
         case CGUI_ALIGN_TOP:
             m_pWindow->setProperty("VertFormatting", "TopAligned");
             break;
-        case CGUI_ALIGN_VCENTRE:
+        case CGUI_ALIGN_VERTICALCENTER:
             m_pWindow->setProperty("VertFormatting", "CentreAligned");
             break;
         case CGUI_ALIGN_BOTTOM:
@@ -96,7 +100,7 @@ CGUIVerticalAlign CGUILabel_Impl::GetVerticalAlign()
 #ifdef MTA_USE_CEGUI_NEXT
     CEGUI::String vert = m_pWindow->getProperty("VertFormatting");
     if (vert == "CentreAligned")
-        return CGUI_ALIGN_VCENTRE;
+        return CGUI_ALIGN_VERTICALCENTER;
     if (vert == "BottomAligned")
         return CGUI_ALIGN_BOTTOM;
     return CGUI_ALIGN_TOP;
@@ -116,11 +120,17 @@ void CGUILabel_Impl::SetHorizontalAlign(CGUIHorizontalAlign eAlign)
         case CGUI_ALIGN_RIGHT:
             m_pWindow->setProperty("HorzFormatting", "RightAligned");
             break;
-        case CGUI_ALIGN_HCENTRE:
+        case CGUI_ALIGN_HORIZONTALCENTER:
             m_pWindow->setProperty("HorzFormatting", "CentreAligned");
             break;
-        case CGUI_ALIGN_WORDWRAP:
+        case CGUI_ALIGN_LEFT_WORDWRAP:
             m_pWindow->setProperty("HorzFormatting", "WordWrapLeftAligned");
+            break;
+        case CGUI_ALIGN_RIGHT_WORDWRAP:
+            m_pWindow->setProperty("HorzFormatting", "WordWrapRightAligned");
+            break;
+        case CGUI_ALIGN_HORIZONTALCENTER_WORDWRAP:
+            m_pWindow->setProperty("HorzFormatting", "WordWrapCentreAligned");
             break;
     }
 #else
@@ -135,19 +145,23 @@ CGUIHorizontalAlign CGUILabel_Impl::GetHorizontalAlign()
     if (horz == "RightAligned")
         return CGUI_ALIGN_RIGHT;
     if (horz == "CentreAligned")
-        return CGUI_ALIGN_HCENTRE;
-    if (horz == "WordWrapLeftAligned" || horz == "WordWrapRightAligned" || horz == "WordWrapCentreAligned")
-        return CGUI_ALIGN_WORDWRAP;
+        return CGUI_ALIGN_HORIZONTALCENTER;
+    if (horz == "WordWrapRightAligned")
+        return CGUI_ALIGN_RIGHT_WORDWRAP;
+    if (horz == "WordWrapCentreAligned")
+        return CGUI_ALIGN_HORIZONTALCENTER_WORDWRAP;
+    if (horz == "WordWrapLeftAligned")
+        return CGUI_ALIGN_LEFT_WORDWRAP;
     return CGUI_ALIGN_LEFT;
 #else
-    return static_cast<CGUIHorizontalAlign>(reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->getHorizontalFormatting());
+    return static_cast<CGUIVerticalAlign>(reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->getHorizontalFormatting());
 #endif
 }
 
 void CGUILabel_Impl::SetTextColor(CGUIColor Color)
 {
 #ifdef MTA_USE_CEGUI_NEXT
-    CEGUI::colour col(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
+    CEGUI::Colour col(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
     m_pWindow->setProperty("TextColours", CEGUI::PropertyHelper<CEGUI::ColourRect>::toString(CEGUI::ColourRect(col)));
 #else
     reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->setTextColours(CEGUI::colour(1.0f / 255.0f * Color.R, 1.0f / 255.0f * Color.G, 1.0f / 255.0f * Color.B));
@@ -157,7 +171,7 @@ void CGUILabel_Impl::SetTextColor(CGUIColor Color)
 void CGUILabel_Impl::SetTextColor(unsigned char ucRed, unsigned char ucGreen, unsigned char ucBlue)
 {
 #ifdef MTA_USE_CEGUI_NEXT
-    CEGUI::colour col(ucRed / 255.0f, ucGreen / 255.0f, ucBlue / 255.0f, 1.0f);
+    CEGUI::Colour col(ucRed / 255.0f, ucGreen / 255.0f, ucBlue / 255.0f, 1.0f);
     m_pWindow->setProperty("TextColours", CEGUI::PropertyHelper<CEGUI::ColourRect>::toString(CEGUI::ColourRect(col)));
 #else
     reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->setTextColours(CEGUI::colour(1.0f / 255.0f * ucRed, 1.0f / 255.0f * ucGreen, 1.0f / 255.0f * ucBlue));
@@ -175,7 +189,7 @@ void CGUILabel_Impl::GetTextColor(unsigned char& ucRed, unsigned char& ucGreen, 
 {
 #ifdef MTA_USE_CEGUI_NEXT
     CEGUI::ColourRect cols = CEGUI::PropertyHelper<CEGUI::ColourRect>::fromString(m_pWindow->getProperty("TextColours"));
-    CEGUI::colour     r = cols.d_top_left;
+    CEGUI::Colour     r = cols.d_top_left;
     ucRed = static_cast<unsigned char>(r.getRed() * 255);
     ucGreen = static_cast<unsigned char>(r.getGreen() * 255);
     ucBlue = static_cast<unsigned char>(r.getBlue() * 255);

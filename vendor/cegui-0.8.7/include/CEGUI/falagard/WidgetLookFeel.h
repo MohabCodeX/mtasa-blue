@@ -83,6 +83,14 @@ public:
 
     /*!
     \brief
+        Return whether an ImagerySection with the specified name exists for
+        this WidgetLookFeel.
+    */
+    bool isImagerySectionDefined(const String& section) const;
+    bool isImagerySectionPresent(const String& section) const;
+
+    /*!
+    \brief
         Return the name of the widget look.
 
     \return

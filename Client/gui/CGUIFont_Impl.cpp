@@ -11,6 +11,10 @@
 
 #include "StdInc.h"
 
+#ifdef MTA_USE_CEGUI_NEXT
+    #include <CEGUI/FreeTypeFont.h>
+#endif
+
 CGUIFont_Impl::CGUIFont_Impl(CGUI_Impl* pGUI, const char* szFontName, const char* szFontFile, unsigned int uSize, unsigned int uFlags, bool bAutoScale)
 {
     // Store the fontmanager and create a font with the given attributes
@@ -67,7 +71,22 @@ void CGUIFont_Impl::SetAntiAliasingEnabled(bool bAntialiased)
 void CGUIFont_Impl::DrawTextString(const char* szText, CRect2D DrawArea, float fZ, CRect2D ClipRect, unsigned long ulFormat, unsigned long ulColor,
                                    float fScaleX, float fScaleY)
 {
-#ifndef MTA_USE_CEGUI_NEXT
+    if (!m_pFont || !szText)
+        return;
+
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::Direct3D9Renderer* pRenderer = static_cast<CEGUI::Direct3D9Renderer*>(CEGUI::System::getSingleton().getRenderer());
+    if (!pRenderer)
+        return;
+
+    CEGUI::GeometryBuffer& geomBuffer = pRenderer->createGeometryBuffer();
+    CEGUI::Rectf           clip(ClipRect.fX1, ClipRect.fY1, ClipRect.fX2, ClipRect.fY2);
+    CEGUI::ColourRect      colours = CEGUI::ColourRect(CEGUI::Colour(static_cast<CEGUI::argb_t>(ulColor)));
+
+    m_pFont->drawText(geomBuffer, CGUI_Impl::GetUTFString(szText), CEGUI::Vector2f(DrawArea.fX1, DrawArea.fY1), &clip, colours, 0.0f, fScaleX, fScaleY);
+    geomBuffer.draw();
+    pRenderer->destroyGeometryBuffer(geomBuffer);
+#else
     CEGUI::TextFormatting fmt;
 
     if (ulFormat == DT_CENTER)

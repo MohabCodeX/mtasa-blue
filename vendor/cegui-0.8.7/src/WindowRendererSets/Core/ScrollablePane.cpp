@@ -73,7 +73,10 @@ namespace CEGUI
         }
 
         // default to plain ViewableArea
-        return wlf.getNamedArea("ViewableArea").getArea().getPixelRect(*w);
+        if (wlf.isNamedAreaDefined("ViewableArea"))
+            return wlf.getNamedArea("ViewableArea").getArea().getPixelRect(*w);
+
+        return Rectf(Vector2f(0.0f, 0.0f), w->getPixelSize());
     }
 
     void FalagardScrollablePane::render()

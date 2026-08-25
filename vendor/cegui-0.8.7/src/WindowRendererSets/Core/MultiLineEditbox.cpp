@@ -94,20 +94,27 @@ Rectf FalagardMultiLineEditbox::getTextRenderArea(void) const
     }
 
     // default to plain TextArea
-    return wlf.getNamedArea("TextArea").getArea().getPixelRect(*w);
+    if (wlf.isNamedAreaDefined("TextArea"))
+        return wlf.getNamedArea("TextArea").getArea().getPixelRect(*w);
+    if (wlf.isNamedAreaDefined("WithFrameTextRenderArea"))
+        return wlf.getNamedArea("WithFrameTextRenderArea").getArea().getPixelRect(*w);
+    if (wlf.isNamedAreaDefined("TextRenderArea"))
+        return wlf.getNamedArea("TextRenderArea").getArea().getPixelRect(*w);
+
+    return Rectf(Vector2f(0.0f, 0.0f), w->getPixelSize());
 }
 
 void FalagardMultiLineEditbox::cacheEditboxBaseImagery()
 {
     MultiLineEditbox* w = (MultiLineEditbox*)d_window;
-    const StateImagery* imagery;
 
     // get WidgetLookFeel for the assigned look.
     const WidgetLookFeel& wlf = getLookNFeel();
-    // try and get imagery for our current state
-    imagery = &wlf.getStateImagery(w->isEffectiveDisabled() ? "Disabled" : (w->isReadOnly() ? "ReadOnly" : "Enabled"));
-    // peform the rendering operation.
-    imagery->render(*w);
+    String state_name = w->isEffectiveDisabled() ? "Disabled" : (w->isReadOnly() ? "ReadOnly" : "Enabled");
+    if (wlf.isStateImageryPresent(state_name))
+        wlf.getStateImagery(state_name).render(*w);
+    else if (wlf.isStateImageryPresent("Enabled"))
+        wlf.getStateImagery("Enabled").render(*w);
 }
 
 void FalagardMultiLineEditbox::cacheCaretImagery(const Rectf& textArea)
@@ -131,25 +138,28 @@ void FalagardMultiLineEditbox::cacheCaretImagery(const Rectf& textArea)
             float ypos = caretLine * fnt->getLineSpacing();
             float xpos = fnt->getTextAdvance(w->getText().substr(d_lines[caretLine].d_startIdx, caretLineIdx));
 
-//             // get base offset to target layer for cursor.
-//             Renderer* renderer = System::getSingleton().getRenderer();
-//             float baseZ = renderer->getZLayer(7) - renderer->getCurrentZ();
-
             // get WidgetLookFeel for the assigned look.
             const WidgetLookFeel& wlf = getLookNFeel();
             // get caret imagery
-            const ImagerySection& caretImagery = wlf.getImagerySection("Caret");
+            const ImagerySection* caretImagery = nullptr;
+            if (wlf.isImagerySectionDefined("Caret"))
+                caretImagery = &wlf.getImagerySection("Caret");
+            else if (wlf.isImagerySectionDefined("Carat"))
+                caretImagery = &wlf.getImagerySection("Carat");
 
-            // calculate finat destination area for caret
-            Rectf caretArea;
-            caretArea.left(textArea.left() + xpos);
-            caretArea.top(textArea.top() + ypos);
-            caretArea.setWidth(caretImagery.getBoundingRect(*w).getSize().d_width);
-            caretArea.setHeight(fnt->getLineSpacing());
-            caretArea.offset(Vector2f(-w->getHorzScrollbar()->getScrollPosition(), -w->getVertScrollbar()->getScrollPosition()));
+            if (caretImagery)
+            {
+                // calculate finat destination area for caret
+                Rectf caretArea;
+                caretArea.left(textArea.left() + xpos);
+                caretArea.top(textArea.top() + ypos);
+                caretArea.setWidth(caretImagery->getBoundingRect(*w).getSize().d_width);
+                caretArea.setHeight(fnt->getLineSpacing());
+                caretArea.offset(Vector2f(-w->getHorzScrollbar()->getScrollPosition(), -w->getVertScrollbar()->getScrollPosition()));
 
-            // cache the caret image for rendering.
-            caretImagery.render(*w, caretArea, 0, &textArea);
+                // cache the caret image for rendering.
+                caretImagery->render(*w, caretArea, 0, &textArea);
+            }
         }
     }
 }

@@ -131,13 +131,14 @@ bool CGUIStaticImage_Impl::LoadFromTexture(CGUITexture* pTexture)
         m_strImageName = szUnique;
         CEGUI::BasicImage* pBasicImage = static_cast<CEGUI::BasicImage*>(&CEGUI::ImageManager::getSingleton().create("BasicImage", m_strImageName));
         pBasicImage->setTexture(pCEGUITexture);
-        pBasicImage->setArea(CEGUI::Rectf(0.0f, 0.0f, pCEGUITexture->getWidth(), pCEGUITexture->getHeight()));
+        pBasicImage->setArea(CEGUI::Rectf(CEGUI::Vector2f(0.0f, 0.0f), pCEGUITexture->getOriginalDataSize()));
         m_pImage = pBasicImage;
 
         m_pWindow->setProperty("Image", m_strImageName);
     }
     catch (const CEGUI::Exception& e)
     {
+        (void)e;
         OutputDebugLine(SString("CGUIStaticImage_Impl::LoadFromTexture failed: %s", e.getMessage().c_str()));
         m_pWindow->setProperty("Image", "");
         m_pImage = nullptr;
@@ -264,8 +265,13 @@ bool CGUIStaticImage_Impl::GetNativeSize(CVector2D& vecSize)
     {
         if (m_pTexture->GetTexture())
         {
+#ifdef MTA_USE_CEGUI_NEXT
+            vecSize.fX = m_pTexture->GetTexture()->getOriginalDataSize().d_width;
+            vecSize.fY = m_pTexture->GetTexture()->getOriginalDataSize().d_height;
+#else
             vecSize.fX = m_pTexture->GetTexture()->getWidth();
             vecSize.fY = m_pTexture->GetTexture()->getHeight();
+#endif
             return true;
         }
     }

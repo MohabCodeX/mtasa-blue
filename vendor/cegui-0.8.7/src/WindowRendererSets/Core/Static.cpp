@@ -75,32 +75,39 @@ namespace CEGUI
         // get WidgetLookFeel for the assigned look.
         const WidgetLookFeel& wlf = getLookNFeel();
 
-		bool is_enabled = !d_window->isEffectiveDisabled();
+        bool is_enabled = !d_window->isEffectiveDisabled();
 
         // render frame section
         if (d_frameEnabled)
         {
-            wlf.getStateImagery(is_enabled ? "EnabledFrame" : "DisabledFrame").render(*d_window);
+            String frame_name = is_enabled ? "EnabledFrame" : "DisabledFrame";
+            if (wlf.isStateImageryPresent(frame_name))
+                wlf.getStateImagery(frame_name).render(*d_window);
+            else if (wlf.isStateImageryPresent("Frame"))
+                wlf.getStateImagery("Frame").render(*d_window);
         }
 
         // render background section
         if (d_backgroundEnabled)
         {
-            const StateImagery* imagery;
+            String bg_name;
             if (d_frameEnabled)
-            {
-                imagery = &wlf.getStateImagery(is_enabled ? "WithFrameEnabledBackground" : "WithFrameDisabledBackground");
-            }
+                bg_name = is_enabled ? "WithFrameEnabledBackground" : "WithFrameDisabledBackground";
             else
-            {
-                imagery = &wlf.getStateImagery(is_enabled ? "NoFrameEnabledBackground" : "NoFrameDisabledBackground");
-            }
-            // peform the rendering operation.
-            imagery->render(*d_window);
+                bg_name = is_enabled ? "NoFrameEnabledBackground" : "NoFrameDisabledBackground";
+
+            if (wlf.isStateImageryPresent(bg_name))
+                wlf.getStateImagery(bg_name).render(*d_window);
+            else if (wlf.isStateImageryPresent(is_enabled ? "EnabledBackground" : "DisabledBackground"))
+                wlf.getStateImagery(is_enabled ? "EnabledBackground" : "DisabledBackground").render(*d_window);
+            else if (wlf.isStateImageryPresent("Background"))
+                wlf.getStateImagery("Background").render(*d_window);
         }
 
         // render basic imagery
-        wlf.getStateImagery(is_enabled ? "Enabled" : "Disabled").render(*d_window);
+        String basic_name = is_enabled ? "Enabled" : "Disabled";
+        if (wlf.isStateImageryPresent(basic_name))
+            wlf.getStateImagery(basic_name).render(*d_window);
     }
 
 } // End of  CEGUI namespace section

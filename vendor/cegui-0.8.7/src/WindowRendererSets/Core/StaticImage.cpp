@@ -28,6 +28,9 @@
 #include "CEGUI/falagard/WidgetLookManager.h"
 #include "CEGUI/falagard/WidgetLookFeel.h"
 #include "CEGUI/TplWindowRendererProperty.h"
+#include "CEGUI/Image.h"
+#include "CEGUI/GeometryBuffer.h"
+#include "CEGUI/ColourRect.h"
 
 // Start of CEGUI namespace section
 namespace CEGUI
@@ -51,12 +54,45 @@ namespace CEGUI
         FalagardStatic::render();
 
         // render image if there is one
-        if (d_image!=0)
+        if (d_image != 0)
         {
             // get WidgetLookFeel for the assigned look.
             const WidgetLookFeel& wlf = getLookNFeel();
             String imagery_name = (!d_frameEnabled && wlf.isStateImageryPresent("NoFrameImage")) ? "NoFrameImage" : "WithFrameImage";
-            wlf.getStateImagery(imagery_name).render(*d_window);
+
+            if (wlf.isStateImageryPresent(imagery_name))
+            {
+                wlf.getStateImagery(imagery_name).render(*d_window);
+            }
+            else if (wlf.isStateImageryPresent("WithFrameImage"))
+            {
+                wlf.getStateImagery("WithFrameImage").render(*d_window);
+            }
+            else if (wlf.isStateImageryPresent("NoFrameImage"))
+            {
+                wlf.getStateImagery("NoFrameImage").render(*d_window);
+            }
+            else if (wlf.isStateImageryPresent("Image"))
+            {
+                wlf.getStateImagery("Image").render(*d_window);
+            }
+            else
+            {
+                // Directly render image across target area / window rect
+                Rectf area(Vector2f(0.0f, 0.0f), d_window->getPixelSize());
+                if (wlf.isNamedAreaDefined("WithFrameImageRenderArea"))
+                    area = wlf.getNamedArea("WithFrameImageRenderArea").getArea().getPixelRect(*d_window);
+                else if (wlf.isNamedAreaDefined("NoFrameImageRenderArea"))
+                    area = wlf.getNamedArea("NoFrameImageRenderArea").getArea().getPixelRect(*d_window);
+                else if (wlf.isNamedAreaDefined("ImageRenderArea"))
+                    area = wlf.getNamedArea("ImageRenderArea").getArea().getPixelRect(*d_window);
+                else if (wlf.isNamedAreaDefined("MainArea"))
+                    area = wlf.getNamedArea("MainArea").getArea().getPixelRect(*d_window);
+
+                const float alpha = d_window->getEffectiveAlpha();
+                GeometryBuffer& buffer = d_window->getGeometryBuffer();
+                d_image->render(buffer, area, 0, ColourRect(Colour(1.0f, 1.0f, 1.0f, alpha)));
+            }
         }
     }
 

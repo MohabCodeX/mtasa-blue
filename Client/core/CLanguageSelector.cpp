@@ -92,7 +92,6 @@ void CLanguageSelector::CreateGUI(CGUIElement* pMainMenuCanvas)
     CVector2D vecButtonPos = pMainMenuCanvas->GetSize() - vecButtonSize - CVector2D(10, 3);
     {
         m_pButtonWindow = reinterpret_cast<CGUIScrollPane*>(g_pCore->GetGUI()->CreateScrollPane(pMainMenuCanvas));
-        m_pButtonWindow->SetProperty("ContentPaneAutoSized", "False");
         m_pButtonWindow->SetPosition(vecButtonPos);
         m_pButtonWindow->SetSize(vecButtonSize);
         m_pButtonWindow->SetZOrderingEnabled(false);
@@ -107,7 +106,6 @@ void CLanguageSelector::CreateGUI(CGUIElement* pMainMenuCanvas)
         CVector2D vecLabelPos = vecIconPos + CVector2D(LANGUAGE_ICON_SIZE_X + LANGUAGE_ICON_LABEL_GAP_X, LANGUAGE_ICON_LABEL_OFFSET_Y);
 
         CGUIScrollPane* pContainerPane = reinterpret_cast<CGUIScrollPane*>(g_pCore->GetGUI()->CreateScrollPane(m_pButtonWindow));
-        pContainerPane->SetProperty("ContentPaneAutoSized", "False");
         pContainerPane->SetPosition(vecItemPosition);
         pContainerPane->SetSize(vecPaneSize);
         pContainerPane->SetZOrderingEnabled(false);
@@ -202,7 +200,6 @@ CLangListItem CLanguageSelector::CreateGUILangItem(CGUIElement* pGUIParent, cons
     CVector2D vecLabelPos = vecPanePosition;
 
     CGUIScrollPane* pContainerPane = reinterpret_cast<CGUIScrollPane*>(g_pCore->GetGUI()->CreateScrollPane(pGUIParent));
-    pContainerPane->SetProperty("ContentPaneAutoSized", "False");
     pContainerPane->SetPosition(vecPanePosition);
     pContainerPane->SetSize(vecPaneSize);
     pContainerPane->SetZOrderingEnabled(false);

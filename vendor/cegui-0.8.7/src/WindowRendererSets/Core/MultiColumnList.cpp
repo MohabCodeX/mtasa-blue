@@ -74,7 +74,12 @@ namespace CEGUI
         }
 
         // default to plain ItemRenderingArea
-        return wlf.getNamedArea("ItemRenderingArea").getArea().getPixelRect(*w);
+        if (wlf.isNamedAreaDefined("ItemRenderingArea"))
+            return wlf.getNamedArea("ItemRenderingArea").getArea().getPixelRect(*w);
+        if (wlf.isNamedAreaDefined("ItemRenderArea"))
+            return wlf.getNamedArea("ItemRenderArea").getArea().getPixelRect(*w);
+
+        return Rectf(Vector2f(0.0f, 0.0f), w->getPixelSize());
     }
 
     void FalagardMultiColumnList::render()

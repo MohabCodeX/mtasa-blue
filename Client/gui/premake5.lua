@@ -15,7 +15,19 @@ project "GUI"
 			"../../vendor/sparsehash/src/"
 		}
 
-	if _OPTIONS["with-cegui-next"] then
+	if _OPTIONS["with-legacy-cegui"] then
+		defines {
+			"_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"
+		}
+		includedirs {
+			"../../vendor/cegui-0.4.0-custom/include",
+		}
+		links {
+			"CEGUI", "DirectX9GUIRenderer", "Falagard",
+			"d3dx9.lib",
+			"dxerr.lib"
+		}
+	else
 		defines {
 			"MTA_USE_CEGUI_NEXT",
 			"_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"
@@ -30,19 +42,8 @@ project "GUI"
 			"freetype",
 			"d3d9.lib",
 			"d3dx9.lib",
-			"dxerr.lib"
-		}
-	else
-		defines {
-			"_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"
-		}
-		includedirs {
-			"../../vendor/cegui-0.4.0-custom/include",
-		}
-		links {
-			"CEGUI", "DirectX9GUIRenderer", "Falagard",
-			"d3dx9.lib",
-			"dxerr.lib"
+			"dxerr.lib",
+			"dbghelp.lib"
 		}
 	end
 

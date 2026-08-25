@@ -91,14 +91,24 @@ void FalagardEditbox::render()
     String visual_text;
     setupVisualString(visual_text);
 
-    const ImagerySection& caret_imagery = wlf.getImagerySection("Caret");
+    const ImagerySection* caret_imagery = nullptr;
+    if (wlf.isImagerySectionDefined("Caret"))
+        caret_imagery = &wlf.getImagerySection("Caret");
+    else if (wlf.isImagerySectionDefined("Carat"))
+        caret_imagery = &wlf.getImagerySection("Carat");
 
     // get destination area for text
-    const Rectf text_area(wlf.getNamedArea("TextArea").getArea().getPixelRect(*d_window));
+    Rectf text_area(Vector2f(0.0f, 0.0f), d_window->getPixelSize());
+    if (wlf.isNamedAreaDefined("TextArea"))
+        text_area = wlf.getNamedArea("TextArea").getArea().getPixelRect(*d_window);
+    else if (wlf.isNamedAreaDefined("TextRenderArea"))
+        text_area = wlf.getNamedArea("TextRenderArea").getArea().getPixelRect(*d_window);
+    else if (wlf.isNamedAreaDefined("WithFrameTextRenderArea"))
+        text_area = wlf.getNamedArea("WithFrameTextRenderArea").getArea().getPixelRect(*d_window);
 
     const size_t caret_index = getCaretIndex(visual_text);
     const float extent_to_caret = font->getTextAdvance(visual_text.substr(0, caret_index));
-    const float caret_width = caret_imagery.getBoundingRect(*d_window, text_area).getWidth();
+    const float caret_width = caret_imagery ? caret_imagery->getBoundingRect(*d_window, text_area).getWidth() : 2.0f;
     const float text_extent = font->getTextExtent(visual_text);
     const float text_offset = calculateTextOffset(text_area, text_extent, caret_width, extent_to_caret);
 
@@ -111,7 +121,8 @@ void FalagardEditbox::render()
     // remember this for next time.
     d_lastTextOffset = text_offset;
 
-    renderCaret(caret_imagery, text_area, text_offset, extent_to_caret);
+    if (caret_imagery)
+        renderCaret(*caret_imagery, text_area, text_offset, extent_to_caret);
 }
 
 //----------------------------------------------------------------------------//
@@ -119,10 +130,11 @@ void FalagardEditbox::renderBaseImagery(const WidgetLookFeel& wlf) const
 {
     Editbox* w = static_cast<Editbox*>(d_window);
 
-    const StateImagery* imagery = &wlf.getStateImagery(
-        w->isEffectiveDisabled() ? "Disabled" : (w->isReadOnly() ? "ReadOnly" : "Enabled"));
-
-    imagery->render(*w);
+    String state_name = w->isEffectiveDisabled() ? "Disabled" : (w->isReadOnly() ? "ReadOnly" : "Enabled");
+    if (wlf.isStateImageryPresent(state_name))
+        wlf.getStateImagery(state_name).render(*w);
+    else if (wlf.isStateImageryPresent("Enabled"))
+        wlf.getStateImagery("Enabled").render(*w);
 }
 
 //----------------------------------------------------------------------------//
@@ -260,9 +272,11 @@ void FalagardEditbox::renderTextNoBidi(const WidgetLookFeel& wlf,
         hlarea.d_max.d_x = hlarea.d_min.d_x + (selEndOffset - selStartOffset);
 
         // render the selection imagery.
-        wlf.getStateImagery(active ? "ActiveSelection" :
-                                     "InactiveSelection").
-            render(*w, hlarea, 0, &text_area);
+        String sel_state = active ? "ActiveSelection" : "InactiveSelection";
+        if (wlf.isStateImageryPresent(sel_state))
+            wlf.getStateImagery(sel_state).render(*w, hlarea, 0, &text_area);
+        else if (wlf.isStateImageryPresent("Selection"))
+            wlf.getStateImagery("Selection").render(*w, hlarea, 0, &text_area);
     }
 
     // draw pre-highlight text

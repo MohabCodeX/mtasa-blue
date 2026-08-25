@@ -113,8 +113,9 @@ void Direct3D9RenderTarget<T>::unprojectPoint(const GeometryBuffer& buff,
 
     D3DXVECTOR3 in(p_in.d_x, p_in.d_y, 0.0f);
     D3DXVECTOR3 out;
-    D3DXMatrixIdentity(&d_matrix);
-    D3DXVec3Unproject(&out, &in, &vp, &d_matrix, &d_matrix, gb.getMatrix());
+    D3DXMATRIX identity;
+    D3DXMatrixIdentity(&identity);
+    D3DXVec3Unproject(&out, &in, &vp, &d_matrix, &identity, gb.getMatrix());
 
     p_out.d_x = out.x;
     p_out.d_y = out.y;
@@ -131,33 +132,26 @@ void Direct3D9RenderTarget<T>::updateMatrix() const
     const float x_offset = -0.5f;
     const float y_offset = -0.5f;
 
-    // set up projection matrix
+    // set up projection parameters
     const float fov = 0.523598776f; // 30 degrees
+    const float aspect = (h != 0.0f) ? (w / h) : 1.0f;
+    const float half_fov = fov * 0.5f;
+    d_viewDistance = (aspect != 0.0f) ? ((w / aspect) / (2.0f * tanf(half_fov))) : 1000.0f;
+
+    // set up projection matrix with far plane safely beyond view distance
     const float pnear = 0.5f;
-    const float pfar = 2000.0f;
-    const float aspect = w / h;
+    const float pfar = ceguimax(10000.0f, d_viewDistance * 3.0f);
 
     D3DXMatrixPerspectiveFovLH(&d_matrix, fov, aspect, pnear, pfar);
 
-    // we need to set up a matrix which will translate up by the half texel
-    // offset, calculate view distance, and apply other tweaks to get
-    // matching coordinates for 2D.
-    const float half_fov = fov * 0.5f;
-    d_viewDistance = (w / aspect) / (2.0f * tanf(half_fov));
-
     D3DXMATRIX view;
     D3DXMatrixIdentity(&view);
+    view._22 = -1.0f;
     view._41 = -w * 0.5f + x_offset;
-    view._42 = -h * 0.5f + y_offset;
+    view._42 = h * 0.5f + y_offset;
     view._43 = d_viewDistance;
 
-    // y axis is flipped for D3D
-    D3DXMATRIX scale;
-    D3DXMatrixIdentity(&scale);
-    scale._22 = -1.0f;
-
     D3DXMatrixMultiply(&d_matrix, &view, &d_matrix);
-    D3DXMatrixMultiply(&d_matrix, &scale, &d_matrix);
 
     d_matrixValid = true;
 }

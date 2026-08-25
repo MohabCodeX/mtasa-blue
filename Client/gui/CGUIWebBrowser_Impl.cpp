@@ -293,6 +293,10 @@ bool CGUIWebBrowser_Impl::Event_MouseDoubleClick(const CEGUI::EventArgs& e)
     return true;
 }
 
+#ifdef MTA_USE_CEGUI_NEXT
+    #include <CEGUI/CoordConverter.h>
+#endif
+
 bool CGUIWebBrowser_Impl::Event_MouseMove(const CEGUI::EventArgs& e)
 {
     if (!m_pWebView)
@@ -300,7 +304,13 @@ bool CGUIWebBrowser_Impl::Event_MouseMove(const CEGUI::EventArgs& e)
 
     const CEGUI::MouseEventArgs& args = reinterpret_cast<const CEGUI::MouseEventArgs&>(e);
 
+#ifdef MTA_USE_CEGUI_NEXT
+    float localX = CEGUI::CoordConverter::screenToWindowX(*m_pWindow, args.position.d_x);
+    float localY = CEGUI::CoordConverter::screenToWindowY(*m_pWindow, args.position.d_y);
+    m_pWebView->InjectMouseMove(static_cast<int>(localX), static_cast<int>(localY));
+#else
     m_pWebView->InjectMouseMove((int)(args.position.d_x - m_pWindow->windowToScreenX(0.0f)), (int)(args.position.d_y - m_pWindow->windowToScreenY(0.0f)));
+#endif
     return true;
 }
 
@@ -331,6 +341,7 @@ bool CGUIWebBrowser_Impl::Event_Deactivated(const CEGUI::EventArgs& e)
     return true;
 }
 
+#ifndef MTA_USE_CEGUI_NEXT
 CGUIWebBrowserTexture::CGUIWebBrowserTexture(CEGUI::Renderer* pOwner, CWebViewInterface* pWebView) : CEGUI::DirectX9Texture(pOwner), m_pWebView(pWebView)
 {
 }
@@ -349,3 +360,4 @@ LPDIRECT3DTEXTURE9 CGUIWebBrowserTexture::getD3DTexture() const
 {
     return m_pWebView->GetTexture();
 }
+#endif

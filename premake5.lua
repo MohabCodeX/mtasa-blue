@@ -29,8 +29,8 @@ newoption {
 }
 
 newoption {
-	trigger     = "with-cegui-next",
-	description = "Build MTA with modern CEGUI 0.8.7 runtime",
+	trigger     = "with-legacy-cegui",
+	description = "Build MTA with legacy CEGUI 0.4.0 runtime (deprecated fallback)",
 }
 
 workspace "MTASA"

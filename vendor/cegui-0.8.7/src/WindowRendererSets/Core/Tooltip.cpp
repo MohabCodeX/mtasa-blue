@@ -43,10 +43,11 @@ namespace CEGUI
     {
         // get WidgetLookFeel for the assigned look.
         const WidgetLookFeel& wlf = getLookNFeel();
-        // try and get imagery for our current state
-        const StateImagery* imagery = &wlf.getStateImagery(d_window->isEffectiveDisabled() ? "Disabled" : "Enabled");
-        // peform the rendering operation.
-        imagery->render(*d_window);
+        String state = d_window->isEffectiveDisabled() ? "Disabled" : "Enabled";
+        if (wlf.isStateImageryPresent(state))
+            wlf.getStateImagery(state).render(*d_window);
+        else if (wlf.isStateImageryPresent("Enabled"))
+            wlf.getStateImagery("Enabled").render(*d_window);
     }
 
     Sizef FalagardTooltip::getTextSize() const
@@ -57,7 +58,10 @@ namespace CEGUI
         // get WidgetLookFeel for the assigned look.
         const WidgetLookFeel& wlf = getLookNFeel();
 
-        const Rectf textArea(wlf.getNamedArea("TextArea").getArea().getPixelRect(*w));
+        Rectf textArea(Vector2f(0.0f, 0.0f), w->getPixelSize());
+        if (wlf.isNamedAreaDefined("TextArea"))
+            textArea = wlf.getNamedArea("TextArea").getArea().getPixelRect(*w);
+
         const Rectf wndArea(CoordConverter::asAbsolute(w->getArea(), w->getParentPixelSize()));
 
         sz.d_width  = CoordConverter::alignToPixels(sz.d_width + wndArea.getWidth() - textArea.getWidth());
