@@ -19,10 +19,6 @@ project "GUI"
 	pchheader "StdInc.h"
 	pchsource "StdInc.cpp"
 
-	defines {
-		"_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"
-	}
-
 	links {
 		"CEGUI", "DirectX9GUIRenderer", "Falagard",
 		"d3dx9.lib",

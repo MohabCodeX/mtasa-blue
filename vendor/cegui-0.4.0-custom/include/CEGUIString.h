@@ -92,14 +92,17 @@ public:
 	\brief
 		Constant forward iterator class for String objects
 	*/
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
-	class const_iterator : public std::iterator<std::random_access_iterator_tag, utf32>
-#else
-	class const_iterator : public std::iterator<std::random_access_iterator_tag, utf32, std::ptrdiff_t, const utf32*, const utf32&>
-#endif
+	class const_iterator
 	{
-
 	public:
+		using iterator_category = std::random_access_iterator_tag;
+		using value_type        = utf32;
+		using difference_type   = std::ptrdiff_t;
+		using pointer           = const utf32*;
+		using reference         = const utf32&;
+		using const_pointer     = const utf32*;
+		using const_reference   = const utf32&;
+
 		//////////////////////////////////////////////////////////////////////////
 		// data
 		//////////////////////////////////////////////////////////////////////////
@@ -239,6 +242,12 @@ public:
 	class iterator : public const_iterator
 	{
 	public:
+		using iterator_category = std::random_access_iterator_tag;
+		using value_type        = utf32;
+		using difference_type   = std::ptrdiff_t;
+		using pointer           = utf32*;
+		using reference         = utf32&;
+
 		iterator(void) {}
 		iterator(pointer ptr) : const_iterator(ptr) {}
 

@@ -136,7 +136,7 @@ bool CGUIStaticImage_Impl::LoadFromTexture(CGUITexture* pTexture)
         // Set the image just loaded as the image to be drawn for the widget
         reinterpret_cast<CEGUI::StaticImage*>(m_pWindow)->setImage(m_pImage);
     }
-    catch (const CEGUI::Exception& e)
+    catch ([[maybe_unused]] const CEGUI::Exception& e)
     {
         OutputDebugLine(SString("CGUIStaticImage_Impl::LoadFromTexture failed: %s", e.getMessage().c_str()));
         // The imageset may have been cleared before the failure, so stop the
