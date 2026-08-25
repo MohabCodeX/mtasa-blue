@@ -12,22 +12,42 @@ project "GUI"
 		includedirs {
 			"../../Shared/sdk",
 			"../sdk",
-			"../../vendor/cegui-0.4.0-custom/include",
 			"../../vendor/sparsehash/src/"
 		}
 
+	if _OPTIONS["with-cegui-next"] then
+		defines {
+			"MTA_USE_CEGUI_NEXT",
+			"_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"
+		}
+		includedirs {
+			"../../vendor/cegui-0.8.7/include",
+			"../../vendor/cegui-0.8.7/include/CEGUI/RendererModules/Direct3D9",
+			"../../vendor/freetype/include",
+		}
+		links {
+			"CEGUI-0.8.7",
+			"freetype",
+			"d3d9.lib",
+			"d3dx9.lib",
+			"dxerr.lib"
+		}
+	else
+		defines {
+			"_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"
+		}
+		includedirs {
+			"../../vendor/cegui-0.4.0-custom/include",
+		}
+		links {
+			"CEGUI", "DirectX9GUIRenderer", "Falagard",
+			"d3dx9.lib",
+			"dxerr.lib"
+		}
+	end
+
 	pchheader "StdInc.h"
 	pchsource "StdInc.cpp"
-
-	defines {
-		"_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"
-	}
-
-	links {
-		"CEGUI", "DirectX9GUIRenderer", "Falagard",
-		"d3dx9.lib",
-		"dxerr.lib"
-	}
 
 	vpaths {
 		["Headers/*"] = "**.h",

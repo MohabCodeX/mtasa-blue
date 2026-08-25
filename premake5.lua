@@ -28,6 +28,11 @@ newoption {
 	description = "Prefix to be prepended to commands used by the GCC toolchain (for cross-building)",
 }
 
+newoption {
+	trigger     = "with-cegui-next",
+	description = "Build MTA with modern CEGUI 0.8.7 runtime",
+}
+
 workspace "MTASA"
 	configurations {"Debug", "Release", "Nightly"}
 

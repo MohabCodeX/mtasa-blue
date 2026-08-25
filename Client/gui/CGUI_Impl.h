@@ -56,8 +56,14 @@ namespace CEGUI
     class WindowManager;
     class Image;
     class EventArgs;
+#ifdef MTA_USE_CEGUI_NEXT
+    class GUIContext;
+    class Window;
+    typedef Window DefaultWindow;
+#else
     class GUISheet;
     typedef GUISheet DefaultWindow;
+#endif
 }  // namespace CEGUI
 
 class CGUI_Impl : public CGUI, public CGUITabList
@@ -319,6 +325,9 @@ private:
     CEGUI::ImagesetManager* m_pImageSetManager;
     CEGUI::SchemeManager*   m_pSchemeManager;
     CEGUI::WindowManager*   m_pWindowManager;
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::GUIContext* m_pDefaultGUIContext;
+#endif
 
     CEGUI::DefaultWindow* m_pTop;
     CEGUI::DefaultWindow* m_ScriptTop;
