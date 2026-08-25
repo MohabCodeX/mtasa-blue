@@ -2029,7 +2029,7 @@ bool SharedUtil::IsWindows10OrGreater()
     using RtlGetVersionFn = LONG(WINAPI*)(OSVERSIONINFOEXW*);
     if (HMODULE ntdll = GetModuleHandleW(L"ntdll.dll"))
     {
-        RtlGetVersionFn pfnRtlGetVersion = reinterpret_cast<RtlGetVersionFn>(GetProcAddress(ntdll, "RtlGetVersion"));
+        RtlGetVersionFn pfnRtlGetVersion = reinterpret_cast<RtlGetVersionFn>(reinterpret_cast<void*>(GetProcAddress(ntdll, "RtlGetVersion")));
         if (pfnRtlGetVersion)
         {
             OSVERSIONINFOEXW info{};

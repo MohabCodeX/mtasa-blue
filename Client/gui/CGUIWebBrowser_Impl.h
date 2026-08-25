@@ -12,7 +12,13 @@
 
 #include <gui/CGUIWebBrowser.h>
 #include "CGUITexture_Impl.h"
-#include <renderers/directx9GUIRenderer/d3d9texture.h>
+
+#ifdef MTA_USE_CEGUI_NEXT
+    #include <CEGUI/RendererModules/Direct3D9/Texture.h>
+    #include <CEGUI/RendererModules/Direct3D9/Renderer.h>
+#else
+    #include <renderers/directx9GUIRenderer/d3d9texture.h>
+#endif
 
 // Use StaticImage here as we'd have to add the same definition twice to the Falagard definition file otherwise
 #define CGUIWEBBROWSER_NAME "CGUI/StaticImage"
@@ -54,11 +60,17 @@ protected:
     bool Event_Deactivated(const CEGUI::EventArgs& e);
 
 private:
-    CGUI_Impl*              m_pGUI;
+    CGUI_Impl* m_pGUI;
+#ifdef MTA_USE_CEGUI_NEXT
+    CEGUI::Image* m_pImage;
+    std::string   m_strImageName;
+    std::string   m_strTextureName;
+#else
     CEGUI::ImagesetManager* m_pImagesetManager;
     CEGUI::Imageset*        m_pImageset;
     CEGUI::Image*           m_pImage;
     CGUIWebBrowserTexture*  m_pTexture;
+#endif
 
     CWebViewInterface* m_pWebView;
 
@@ -67,6 +79,7 @@ private:
 #undef EXCLUDE_SET_SIZE
 };
 
+#ifndef MTA_USE_CEGUI_NEXT
 // The purpose of this class is to provide an externally managed DirectX texture
 class CGUIWebBrowserTexture : public CEGUI::DirectX9Texture
 {
@@ -87,3 +100,4 @@ public:
 private:
     CWebViewInterface* m_pWebView;
 };
+#endif

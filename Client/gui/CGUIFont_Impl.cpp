@@ -16,6 +16,11 @@ CGUIFont_Impl::CGUIFont_Impl(CGUI_Impl* pGUI, const char* szFontName, const char
     // Store the fontmanager and create a font with the given attributes
     m_pFontManager = pGUI->GetFontManager();
     m_pFont = NULL;
+
+#ifdef MTA_USE_CEGUI_NEXT
+    m_pFont = &m_pFontManager->createFreeTypeFont(szFontName, static_cast<float>(uSize), true, szFontFile, "",
+                                                  bAutoScale ? CEGUI::ASM_Both : CEGUI::ASM_Disabled, CEGUI::Sizef(1024.0f, 768.0f));
+#else
     while (!m_pFont)
     {
         try
@@ -36,21 +41,33 @@ CGUIFont_Impl::CGUIFont_Impl(CGUI_Impl* pGUI, const char* szFontName, const char
     // Set default attributes
     SetNativeResolution(1024, 768);
     SetAutoScalingEnabled(bAutoScale);
+#endif
 }
 
 CGUIFont_Impl::~CGUIFont_Impl()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pFont)
+        m_pFontManager->destroy(*m_pFont);
+#else
     m_pFontManager->destroyFont(m_pFont);
+#endif
 }
 
 void CGUIFont_Impl::SetAntiAliasingEnabled(bool bAntialiased)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pFont)
+        static_cast<CEGUI::FreeTypeFont*>(m_pFont)->setAntiAliased(bAntialiased);
+#else
     m_pFont->setAntiAliased(bAntialiased);
+#endif
 }
 
 void CGUIFont_Impl::DrawTextString(const char* szText, CRect2D DrawArea, float fZ, CRect2D ClipRect, unsigned long ulFormat, unsigned long ulColor,
                                    float fScaleX, float fScaleY)
 {
+#ifndef MTA_USE_CEGUI_NEXT
     CEGUI::TextFormatting fmt;
 
     if (ulFormat == DT_CENTER)
@@ -63,26 +80,45 @@ void CGUIFont_Impl::DrawTextString(const char* szText, CRect2D DrawArea, float f
     m_pFont->drawText(szText ? CGUI_Impl::GetUTFString(szText) : CEGUI::String(), CEGUI::Rect(DrawArea.fX1, DrawArea.fY1, DrawArea.fX2, DrawArea.fY2), fZ,
                       CEGUI::Rect(ClipRect.fX1, ClipRect.fY1, ClipRect.fX2, ClipRect.fY2), fmt, CEGUI::ColourRect(CEGUI::colour((CEGUI::argb_t)ulColor)),
                       fScaleX, fScaleY);
+#endif
 }
 
 bool CGUIFont_Impl::IsAntiAliasingEnabled()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return m_pFont ? static_cast<CEGUI::FreeTypeFont*>(m_pFont)->isAntiAliased() : false;
+#else
     return m_pFont->isAntiAliased();
+#endif
 }
 
 void CGUIFont_Impl::SetAutoScalingEnabled(bool bAutoScaled)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pFont)
+        m_pFont->setAutoScaled(bAutoScaled ? CEGUI::ASM_Both : CEGUI::ASM_Disabled);
+#else
     m_pFont->setAutoScalingEnabled(bAutoScaled);
+#endif
 }
 
 bool CGUIFont_Impl::IsAutoScalingEnabled()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return m_pFont ? (m_pFont->getAutoScaled() != CEGUI::ASM_Disabled) : false;
+#else
     return m_pFont->isAutoScaled();
+#endif
 }
 
 void CGUIFont_Impl::SetNativeResolution(int iX, int iY)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pFont)
+        m_pFont->setNativeResolution(CEGUI::Sizef(static_cast<float>(iX), static_cast<float>(iY)));
+#else
     m_pFont->setNativeResolution(CEGUI::Size(static_cast<float>(iX), static_cast<float>(iY)));
+#endif
 }
 
 float CGUIFont_Impl::GetCharacterWidth(int iChar, float fScale)
