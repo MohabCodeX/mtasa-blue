@@ -155,6 +155,7 @@ protected:
 
     CGUIButton*      m_pButtonConnect[SERVER_BROWSER_TYPE_COUNT];
     CGUIStaticImage* m_pButtonConnectIcon[SERVER_BROWSER_TYPE_COUNT];
+    CGUILabel*       m_pButtonConnectLabel[SERVER_BROWSER_TYPE_COUNT];
     CGUIButton*      m_pButtonRefresh[SERVER_BROWSER_TYPE_COUNT];
     CGUIStaticImage* m_pButtonRefreshIcon[SERVER_BROWSER_TYPE_COUNT];
     CGUIButton*      m_pButtonInfo[SERVER_BROWSER_TYPE_COUNT];

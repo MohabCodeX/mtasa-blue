@@ -298,7 +298,7 @@ unsigned char getCAPRtl(CHARTYPE ch)
         PDF,
         LRO,
         ON, /*30-3f*/
-            //  EN, EN, EN, EN, EN, EN, AN, AN, AN, AN, CS, ON, ON, ON, ON, ON, /*30-3f*/
+        //  EN, EN, EN, EN, EN, EN, AN, AN, AN, AN, CS, ON, ON, ON, ON, ON, /*30-3f*/
         R,
         AL,
         AL,
@@ -603,7 +603,7 @@ int doShape(BLOCKTYPE line, CHARTYPE* to, int from, int count)
                     }
                     if (ligFlag)
                     {
-                        to[j] = 0x20;
+                        to[j] = 0xFEFF;
                         i = j;
                         ligFlag = 0;
                         break;

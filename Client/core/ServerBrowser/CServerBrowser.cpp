@@ -117,6 +117,7 @@ CServerBrowser::CServerBrowser()
         m_pIncludeOtherVersions[i] = nullptr;
         m_pButtonConnect[i] = nullptr;
         m_pButtonConnectIcon[i] = nullptr;
+        m_pButtonConnectLabel[i] = nullptr;
         m_pButtonRefresh[i] = nullptr;
         m_pButtonRefreshIcon[i] = nullptr;
         m_pButtonInfo[i] = nullptr;
@@ -525,20 +526,46 @@ void CServerBrowser::CreateTab(ServerBrowserType type, const char* szName)
     m_pComboAddressHistory[type]->SetSelectionHandler(GUI_CALLBACK(&CServerBrowser::OnHistorySelected, this));
     m_pComboAddressHistory[type]->SetDropListRemoveHandler(GUI_CALLBACK(&CServerBrowser::OnHistoryDropListRemove, this));
 
-    // Connect button + icon
+    // Connect button + icon + label
     fX = fX + fWidth + SB_SMALL_SPACER;
-    std::string strButtonText = _("Connect");
-    strButtonText = "     " + strButtonText;
-    m_pButtonConnect[type] = reinterpret_cast<CGUIButton*>(pManager->CreateButton(m_pTab[type], strButtonText.c_str()));
+    m_pButtonConnect[type] = reinterpret_cast<CGUIButton*>(pManager->CreateButton(m_pTab[type], ""));
     m_pButtonConnect[type]->SetPosition(CVector2D(fX, fY), false);
     m_pButtonConnect[type]->SetSize(CVector2D(fConnectButtonWidth, SB_BUTTON_SIZE_Y), false);
     m_pButtonConnect[type]->SetClickHandler(GUI_CALLBACK(&CServerBrowser::OnConnectClick, this));
-    m_pButtonConnect[type]->SetFont("default-bold-small");
     m_pButtonConnect[type]->SetZOrderingEnabled(false);
+
+    bool bIsRTL = false;
+    if (g_pLocalization)
+    {
+        SString strLang = g_pLocalization->GetLanguageCode();
+        if (strLang.BeginsWithI("ar") || strLang.BeginsWithI("fa") || strLang.BeginsWithI("he") || strLang.BeginsWithI("ur"))
+            bIsRTL = true;
+    }
+
     m_pButtonConnectIcon[type] = reinterpret_cast<CGUIStaticImage*>(pManager->CreateStaticImage(m_pButtonConnect[type]));
     m_pButtonConnectIcon[type]->SetSize(CVector2D(SB_BUTTON_SIZE_Y, SB_BUTTON_SIZE_Y), false);
     m_pButtonConnectIcon[type]->LoadFromFile("cgui\\images\\serverbrowser\\connect.png");
     m_pButtonConnectIcon[type]->SetProperty("MousePassThroughEnabled", "True");
+
+    m_pButtonConnectLabel[type] = reinterpret_cast<CGUILabel*>(pManager->CreateLabel(m_pButtonConnect[type], _("Connect")));
+    m_pButtonConnectLabel[type]->SetFont("default-bold-small");
+    m_pButtonConnectLabel[type]->SetVerticalAlign(CGUIVerticalAlign::CGUI_ALIGN_VERTICALCENTER);
+    m_pButtonConnectLabel[type]->SetProperty("MousePassThroughEnabled", "True");
+
+    if (bIsRTL)
+    {
+        m_pButtonConnectIcon[type]->SetPosition(CVector2D(fConnectButtonWidth - SB_BUTTON_SIZE_Y, 0), false);
+        m_pButtonConnectLabel[type]->SetPosition(CVector2D(4, 0), false);
+        m_pButtonConnectLabel[type]->SetSize(CVector2D(fConnectButtonWidth - SB_BUTTON_SIZE_Y - 4, SB_BUTTON_SIZE_Y), false);
+        m_pButtonConnectLabel[type]->SetHorizontalAlign(CGUIHorizontalAlign::CGUI_ALIGN_RIGHT);
+    }
+    else
+    {
+        m_pButtonConnectIcon[type]->SetPosition(CVector2D(0, 0), false);
+        m_pButtonConnectLabel[type]->SetPosition(CVector2D(SB_BUTTON_SIZE_Y, 0), false);
+        m_pButtonConnectLabel[type]->SetSize(CVector2D(fConnectButtonWidth - SB_BUTTON_SIZE_Y - 4, SB_BUTTON_SIZE_Y), false);
+        m_pButtonConnectLabel[type]->SetHorizontalAlign(CGUIHorizontalAlign::CGUI_ALIGN_LEFT);
+    }
 
     // Info button + icon
     fX = fX + fConnectButtonWidth + SB_SMALL_SPACER;
@@ -802,6 +829,9 @@ void CServerBrowser::DeleteTab(ServerBrowserType type)
 
     delete m_pButtonConnectIcon[type];
     m_pButtonConnectIcon[type] = nullptr;
+
+    delete m_pButtonConnectLabel[type];
+    m_pButtonConnectLabel[type] = nullptr;
 
     if (m_pComboAddressHistory[type])
     {
