@@ -31,6 +31,7 @@
 #include "CEGUI/widgets/Scrollbar.h"
 #include "CEGUI/PropertyHelper.h"
 #include "CEGUI/Image.h"
+#include "CEGUI/BidiVisualMapping.h"
 #include "CEGUI/TplWindowRendererProperty.h"
 
 // Start of CEGUI namespace section
