@@ -2189,8 +2189,19 @@ void CGUI_Impl::Cleanup()
         m_ScriptTop = nullptr;
         m_pTop = nullptr;
 
+#ifdef MTA_USE_CEGUI_NEXT
+        if (m_pDefaultGUIContext)
+        {
+            m_pDefaultGUIContext->setRootWindow(nullptr);
+            m_pDefaultGUIContext->clearGeometry();
+        }
+#endif
+
         if (m_pWindowManager)
+        {
             m_pWindowManager->destroyAllWindows();
+            m_pWindowManager->cleanDeadPool();
+        }
 
         // Clear redraw structures that may reference old elements
         m_RedrawQueue.clear();
@@ -2198,6 +2209,14 @@ void CGUI_Impl::Cleanup()
 
         // Recreate the root window (destroyed above via destroyAllWindows)
         CreateRootWindow();
+
+#ifdef MTA_USE_CEGUI_NEXT
+        if (m_pDefaultGUIContext)
+        {
+            m_pDefaultGUIContext->clearGeometry();
+            m_pDefaultGUIContext->markAsDirty();
+        }
+#endif
     }
     catch (const std::exception& e)
     {

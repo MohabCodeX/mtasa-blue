@@ -78,6 +78,9 @@ void CLocalGUI::SetSkin(const char* szName)
     if (CLocalGUI::IsFaultDialogOpen())
         return;
 
+    // Ensure any open message box is safely destroyed before tearing down GUI structures
+    CCore::GetSingleton().RemoveMessageBox();
+
     CVector2D consolePos, consoleSize;
 
     bool guiWasLoaded = m_pMainMenu != NULL;
@@ -149,6 +152,9 @@ void CLocalGUI::ChangeLocale(const char* szName)
     // windows inside that pump.
     if (CLocalGUI::IsFaultDialogOpen())
         return;
+
+    // Ensure any open message box is safely destroyed before tearing down GUI structures
+    CCore::GetSingleton().RemoveMessageBox();
 
     bool guiWasLoaded = m_pMainMenu != NULL;
     bool isModLoaded = CCore::GetSingleton().GetModManager()->IsLoaded();
@@ -346,13 +352,15 @@ void CLocalGUI::ApplyQueuedLocale()
     if (!m_bHasQueuedLocaleChange)
         return;
 
+    // Remove the "Changing language, please wait..." message box before tearing down GUI structures
+    CCore::GetSingleton().RemoveMessageBox();
+
     CClientVariables* cvars = CCore::GetSingleton().GetCVars();
 
     if (m_QueuedLocaleChange.empty())
     {
         m_bHasQueuedLocaleChange = false;
         m_LocaleChangeCounter = 0;
-        CCore::GetSingleton().RemoveMessageBox();
         return;
     }
 
@@ -366,7 +374,6 @@ void CLocalGUI::ApplyQueuedLocale()
         m_bHasQueuedLocaleChange = false;
         m_QueuedLocaleChange.clear();
         m_LocaleChangeCounter = 0;
-        CCore::GetSingleton().RemoveMessageBox();
         return;
     }
 
@@ -386,8 +393,6 @@ void CLocalGUI::ApplyQueuedLocale()
 
     if (cvars)
         m_LastSettingsRevision = cvars->GetRevision();
-
-    CCore::GetSingleton().RemoveMessageBox();
 }
 
 void CLocalGUI::DoPulse()
