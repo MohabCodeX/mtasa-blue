@@ -818,11 +818,16 @@ int doBidi(BLOCKTYPE line, int count, int applyShape, int reorderCombining, int*
     if (!fAL && !fX)
         return 0;
 
-    /* Initialize types, levels */
-    types = (unsigned char*)malloc(sizeof(unsigned char) * count);
-    levels = (unsigned char*)malloc(sizeof(unsigned char) * count);
+    /* Initialize types, levels using fast stack buffers for common UI string lengths (<= 512) */
+    enum { kStackBufferSize = 512 };
+    unsigned char stackTypes[kStackBufferSize];
+    unsigned char stackLevels[kStackBufferSize];
+    CHARTYPE      stackShapeTo[kStackBufferSize];
+
+    types = (count <= kStackBufferSize) ? stackTypes : (unsigned char*)malloc(sizeof(unsigned char) * count);
+    levels = (count <= kStackBufferSize) ? stackLevels : (unsigned char*)malloc(sizeof(unsigned char) * count);
     if (applyShape)
-        shapeTo = (CHARTYPE*)malloc(sizeof(CHARTYPE) * count);
+        shapeTo = (count <= kStackBufferSize) ? stackShapeTo : (CHARTYPE*)malloc(sizeof(CHARTYPE) * count);
 
     /* Rule (P1)  NOT IMPLEMENTED
      * P1. Split the text into separate paragraphs. A paragraph separator is
@@ -1240,7 +1245,8 @@ int doBidi(BLOCKTYPE line, int count, int applyShape, int reorderCombining, int*
         {
             GETCHAR(line, i) = shapeTo[i];
         }
-        free(shapeTo);
+        if (shapeTo != stackShapeTo)
+            free(shapeTo);
     }
 
     /* Rule (L2)
@@ -1267,8 +1273,10 @@ int doBidi(BLOCKTYPE line, int count, int applyShape, int reorderCombining, int*
         tempType--;
     }
 
-    free(types);
-    free(levels);
+    if (types != stackTypes)
+        free(types);
+    if (levels != stackLevels)
+        free(levels);
 
     if (l2v && v2l)
     {
