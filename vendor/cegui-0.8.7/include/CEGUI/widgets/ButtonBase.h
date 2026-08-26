@@ -93,16 +93,18 @@ public:
 	*/
 	virtual ~ButtonBase(void);
 
-
 protected:
-	/*************************************************************************
-		Overridden event handlers
-	*************************************************************************/
-	virtual void	onMouseMove(MouseEventArgs& e);
-	virtual void	onMouseButtonDown(MouseEventArgs& e);
-	virtual void	onMouseButtonUp(MouseEventArgs& e);
-	virtual void	onCaptureLost(WindowEventArgs& e);
-	virtual void	onMouseLeaves(MouseEventArgs& e);
+    /*************************************************************************
+        Event trigger methods
+    *************************************************************************/
+    virtual void onMouseButtonDown(MouseEventArgs& e);
+    virtual void onMouseButtonUp(MouseEventArgs& e);
+    virtual void onMouseDoubleClicked(MouseEventArgs& e);
+    virtual void onMouseTripleClicked(MouseEventArgs& e);
+    virtual void onMouseMove(MouseEventArgs& e);
+    virtual void onMouseLeaves(MouseEventArgs& e);
+    virtual void onCaptureLost(WindowEventArgs& e);
+
 
 
 	/*************************************************************************

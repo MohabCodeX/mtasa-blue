@@ -417,11 +417,65 @@ namespace CEGUI
 
         wndx -= d_lastTextOffset;
 
-        // Return the proper index
+        const String& visual_text = w->getTextVisual();
+        const size_t  char_count = visual_text.length();
+
+        if (char_count == 0)
+            return 0;
+
+        const Font* font = w->getFont();
+        if (!font)
+            return 0;
+
+#ifdef CEGUI_BIDI_SUPPORT
+        const BidiVisualMapping* bvm = w->getBidiVisualMapping();
+        const String&            logical_text = w->getText();
+        if (bvm && !bvm->getV2lMapping().empty() && !w->isTextMasked())
+        {
+            const auto& v2l = bvm->getV2lMapping();
+            float       cur_extent = 0.0f;
+
+            for (size_t c = 0; c < char_count; ++c)
+            {
+                const FontGlyph* glyph = font->getGlyphData(visual_text[c]);
+                float            adv = glyph ? glyph->getAdvance() : 0.0f;
+                float            x_start = cur_extent;
+                float            x_end = cur_extent + adv;
+                float            x_mid = x_start + adv * 0.5f;
+                cur_extent = x_end;
+
+                if (wndx < x_end)
+                {
+                    size_t       log_idx = (c < v2l.size()) ? v2l[c] : c;
+                    BidiCharType charType = (log_idx < logical_text.length()) ? bvm->getBidiCharType(logical_text[log_idx]) : BCT_LEFT_TO_RIGHT;
+
+                    if (charType == BCT_RIGHT_TO_LEFT)
+                    {
+                        return (wndx >= x_mid) ? log_idx : (log_idx + 1);
+                    }
+                    else
+                    {
+                        return (wndx < x_mid) ? log_idx : (log_idx + 1);
+                    }
+                }
+            }
+
+            // Beyond right edge of text
+            size_t       last_log = v2l[char_count - 1];
+            BidiCharType lastType = (last_log < logical_text.length()) ? bvm->getBidiCharType(logical_text[last_log]) : BCT_LEFT_TO_RIGHT;
+            if (lastType == BCT_RIGHT_TO_LEFT)
+            {
+                return last_log;
+            }
+            return logical_text.length();
+        }
+#endif
+
+        // Return the proper index for non-bidi or masked text
         if (w->isTextMasked())
-            return w->getFont()->getCharAtPixel(String(w->getTextVisual().length(), w->getMaskCodePoint()), wndx);
+            return font->getCharAtPixel(String(visual_text.length(), w->getMaskCodePoint()), wndx);
         else
-            return w->getFont()->getCharAtPixel(w->getTextVisual(), wndx);
+            return font->getCharAtPixel(visual_text, wndx);
     }
 
     //----------------------------------------------------------------------------//

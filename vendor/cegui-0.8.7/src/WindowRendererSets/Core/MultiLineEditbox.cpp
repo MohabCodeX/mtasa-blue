@@ -134,40 +134,58 @@ namespace CEGUI
                 float xpos = 0.0f;
 #ifdef CEGUI_BIDI_SUPPORT
                 const BidiVisualMapping* bvm = w->getBidiVisualMapping();
-                const String             visualLine = w->getTextVisual().substr(d_lines[caretLine].d_startIdx, d_lines[caretLine].d_length);
-                const String             logicalLine = w->getText().substr(d_lines[caretLine].d_startIdx, d_lines[caretLine].d_length);
+                String                   logicalLine = w->getText().substr(d_lines[caretLine].d_startIdx, d_lines[caretLine].d_length);
+                while (!logicalLine.empty() && (logicalLine[logicalLine.length() - 1] == '\n' || logicalLine[logicalLine.length() - 1] == '\r'))
+                    logicalLine.resize(logicalLine.length() - 1);
 
                 if (bvm && !logicalLine.empty())
                 {
+                    String                          visualLine;
+                    BidiVisualMapping::StrIndexList l2v, v2l;
+                    bvm->reorderFromLogicalToVisual(logicalLine, visualLine, l2v, v2l);
+
                     size_t visualCaretIdx = 0;
                     if (caretLineIdx == 0)
                     {
                         BidiCharType charType = bvm->getBidiCharType(logicalLine[0]);
-                        visualCaretIdx = (charType == BCT_RIGHT_TO_LEFT) ? visualLine.length() : 0;
-                    }
-                    else
-                    {
-                        size_t       prevLogicalIdx = caretLineIdx - 1;
-                        BidiCharType charType = bvm->getBidiCharType(logicalLine[prevLogicalIdx]);
                         if (charType == BCT_NEUTRAL)
                         {
-                            for (int p = static_cast<int>(prevLogicalIdx) - 1; p >= 0; --p)
+                            for (size_t nextIdx = 1; nextIdx < logicalLine.length(); ++nextIdx)
                             {
-                                BidiCharType prevStrongType = bvm->getBidiCharType(logicalLine[p]);
-                                if (prevStrongType != BCT_NEUTRAL)
+                                BidiCharType nextType = bvm->getBidiCharType(logicalLine[nextIdx]);
+                                if (nextType != BCT_NEUTRAL)
                                 {
-                                    charType = prevStrongType;
+                                    charType = nextType;
                                     break;
                                 }
                             }
                         }
-                        if (charType == BCT_RIGHT_TO_LEFT)
+                        visualCaretIdx = (charType == BCT_RIGHT_TO_LEFT) ? (l2v.empty() ? visualLine.length() : (l2v[0] + 1)) : (l2v.empty() ? 0 : l2v[0]);
+                    }
+                    else
+                    {
+                        size_t prevLogicalIdx = caretLineIdx - 1;
+                        if (prevLogicalIdx < l2v.size())
                         {
-                            visualCaretIdx = (visualLine.length() >= caretLineIdx) ? (visualLine.length() - caretLineIdx) : 0;
+                            size_t       v = l2v[prevLogicalIdx];
+                            BidiCharType charType = bvm->getBidiCharType(logicalLine[prevLogicalIdx]);
+                            if (charType == BCT_NEUTRAL)
+                            {
+                                for (int p = static_cast<int>(prevLogicalIdx) - 1; p >= 0; --p)
+                                {
+                                    BidiCharType prevStrongType = bvm->getBidiCharType(logicalLine[p]);
+                                    if (prevStrongType != BCT_NEUTRAL)
+                                    {
+                                        charType = prevStrongType;
+                                        break;
+                                    }
+                                }
+                            }
+                            visualCaretIdx = (charType == BCT_RIGHT_TO_LEFT) ? v : (v + 1);
                         }
                         else
                         {
-                            visualCaretIdx = caretLineIdx;
+                            visualCaretIdx = visualLine.length();
                         }
                     }
                     xpos = fnt->getTextAdvance(visualLine.substr(0, visualCaretIdx));
@@ -224,135 +242,144 @@ namespace CEGUI
     void FalagardMultiLineEditbox::cacheTextLines(const Rectf& dest_area)
     {
         MultiLineEditbox* w = (MultiLineEditbox*)d_window;
-        // text is already formatted, we just grab the lines and render them with the required alignment.
-        Rectf drawArea(dest_area);
-        float vertScrollPos = w->getVertScrollbar()->getScrollPosition();
+        Rectf             drawArea(dest_area);
+        float             vertScrollPos = w->getVertScrollbar()->getScrollPosition();
         drawArea.offset(Vector2f(-w->getHorzScrollbar()->getScrollPosition(), -vertScrollPos));
 
         const Font* fnt = w->getFont();
+        if (!fnt)
+            return;
 
-        if (fnt)
+        ColourRect  colours;
+        const float alpha = w->getEffectiveAlpha();
+        ColourRect  normalTextCol;
+        setColourRectToUnselectedTextColour(normalTextCol);
+        normalTextCol.modulateAlpha(alpha);
+        ColourRect selectTextCol;
+        setColourRectToSelectedTextColour(selectTextCol);
+        selectTextCol.modulateAlpha(alpha);
+        ColourRect selectBrushCol;
+        w->hasInputFocus() ? setColourRectToActiveSelectionColour(selectBrushCol) : setColourRectToInactiveSelectionColour(selectBrushCol);
+        selectBrushCol.modulateAlpha(alpha);
+
+        const MultiLineEditbox::LineList& d_lines = w->getFormattedLines();
+        const size_t                      numLines = d_lines.size();
+
+        size_t sidx = static_cast<size_t>(vertScrollPos / fnt->getLineSpacing());
+        size_t eidx = 1 + sidx + static_cast<size_t>(dest_area.getHeight() / fnt->getLineSpacing());
+        eidx = ceguimin(eidx, numLines);
+        drawArea.d_min.d_y += fnt->getLineSpacing() * static_cast<float>(sidx);
+
+        const BidiVisualMapping* bvm = nullptr;
+#ifdef CEGUI_BIDI_SUPPORT
+        bvm = w->getBidiVisualMapping();
+#endif
+
+        const size_t selStart = w->getSelectionStartIndex();
+        const size_t selEnd = w->getSelectionEndIndex();
+        const bool   hasSelection = (w->getSelectionLength() > 0) && (w->getSelectionBrushImage() != nullptr);
+
+        for (size_t i = sidx; i < eidx; ++i)
         {
-            // calculate final colours to use.
-            ColourRect  colours;
-            const float alpha = w->getEffectiveAlpha();
-            ColourRect  normalTextCol;
-            setColourRectToUnselectedTextColour(normalTextCol);
-            normalTextCol.modulateAlpha(alpha);
-            ColourRect selectTextCol;
-            setColourRectToSelectedTextColour(selectTextCol);
-            selectTextCol.modulateAlpha(alpha);
-            ColourRect selectBrushCol;
-            w->hasInputFocus() ? setColourRectToActiveSelectionColour(selectBrushCol) : setColourRectToInactiveSelectionColour(selectBrushCol);
-            selectBrushCol.modulateAlpha(alpha);
+            Rectf                             lineRect(drawArea);
+            const MultiLineEditbox::LineInfo& currLine = d_lines[i];
 
-            const MultiLineEditbox::LineList& d_lines = w->getFormattedLines();
-            const size_t                      numLines = d_lines.size();
+            String logicalLine = w->getText().substr(currLine.d_startIdx, currLine.d_length);
+            while (!logicalLine.empty() && (logicalLine[logicalLine.length() - 1] == '\n' || logicalLine[logicalLine.length() - 1] == '\r'))
+                logicalLine.resize(logicalLine.length() - 1);
 
-            // calculate the range of visible lines
-            size_t sidx, eidx;
-            sidx = static_cast<size_t>(vertScrollPos / fnt->getLineSpacing());
-            eidx = 1 + sidx + static_cast<size_t>(dest_area.getHeight() / fnt->getLineSpacing());
-            eidx = ceguimin(eidx, numLines);
-            drawArea.d_min.d_y += fnt->getLineSpacing() * static_cast<float>(sidx);
+            const float old_top = lineRect.top();
+            lineRect.d_min.d_y += (fnt->getLineSpacing() - fnt->getFontHeight()) * 0.5f;
 
-            // for each formatted line.
-            for (size_t i = sidx; i < eidx; ++i)
+#ifdef CEGUI_BIDI_SUPPORT
+            if (bvm && !logicalLine.empty())
             {
-                Rectf                             lineRect(drawArea);
-                const MultiLineEditbox::LineInfo& currLine = d_lines[i];
-                String                            lineText(w->getTextVisual().substr(currLine.d_startIdx, currLine.d_length));
+                String                          visualLine;
+                BidiVisualMapping::StrIndexList l2v, v2l;
+                bvm->reorderFromLogicalToVisual(logicalLine, visualLine, l2v, v2l);
 
-                // offset the font little down so that it's centered within its own spacing
-                const float old_top = lineRect.top();
-                lineRect.d_min.d_y += (fnt->getLineSpacing() - fnt->getFontHeight()) * 0.5f;
+                float char_x = lineRect.d_min.d_x;
+                for (size_t c = 0; c < visualLine.length(); ++c)
+                {
+                    String currChar = visualLine.substr(c, 1);
+                    float  charAdv = fnt->getTextAdvance(currChar);
 
-                // if it is a simple 'no selection area' case
-                if ((currLine.d_startIdx >= w->getSelectionEndIndex()) || ((currLine.d_startIdx + currLine.d_length) <= w->getSelectionStartIndex()) ||
-                    (w->getSelectionBrushImage() == 0))
+                    size_t log_in_line = (c < v2l.size()) ? v2l[c] : c;
+                    size_t global_log = currLine.d_startIdx + log_in_line;
+
+                    bool highlighted = hasSelection && (global_log >= selStart) && (global_log < selEnd);
+
+                    if (highlighted)
+                    {
+                        Rectf hlarea(lineRect);
+                        hlarea.top(old_top);
+                        hlarea.bottom(old_top + fnt->getLineSpacing());
+                        hlarea.left(char_x);
+                        hlarea.right(char_x + charAdv);
+                        w->getSelectionBrushImage()->render(w->getGeometryBuffer(), hlarea, &dest_area, selectBrushCol);
+
+                        colours = selectTextCol;
+                    }
+                    else
+                    {
+                        colours = normalTextCol;
+                    }
+
+                    Vector2f charPos(char_x, lineRect.d_min.d_y);
+                    fnt->drawText(w->getGeometryBuffer(), currChar, charPos, &dest_area, colours);
+                    char_x += charAdv;
+                }
+            }
+            else
+#endif
+            {
+                if (!hasSelection || (currLine.d_startIdx >= selEnd) || ((currLine.d_startIdx + currLine.d_length) <= selStart))
                 {
                     colours = normalTextCol;
-                    // render the complete line.
-                    fnt->drawText(w->getGeometryBuffer(), lineText, lineRect.getPosition(), &dest_area, colours);
+                    fnt->drawText(w->getGeometryBuffer(), logicalLine, lineRect.getPosition(), &dest_area, colours);
                 }
-                // we have at least some selection highlighting to do
                 else
                 {
-                    // Start of actual rendering section.
-                    String sect;
-                    size_t sectIdx = 0, sectLen;
-                    float  selStartOffset = 0.0f, selAreaWidth = 0.0f;
+                    size_t line_sel_start = (selStart > currLine.d_startIdx) ? (selStart - currLine.d_startIdx) : 0;
+                    size_t line_sel_end = (selEnd < currLine.d_startIdx + logicalLine.length()) ? (selEnd - currLine.d_startIdx) : logicalLine.length();
 
-                    // render any text prior to selected region of line.
-                    if (currLine.d_startIdx < w->getSelectionStartIndex())
+                    float cur_x = lineRect.d_min.d_x;
+
+                    if (line_sel_start > 0)
                     {
-                        // calculate length of text section
-                        sectLen = w->getSelectionStartIndex() - currLine.d_startIdx;
-
-                        // get text for this section
-                        sect = lineText.substr(sectIdx, sectLen);
-                        sectIdx += sectLen;
-
-                        // get the pixel offset to the beginning of the selection area highlight.
-                        selStartOffset = fnt->getTextAdvance(sect);
-
-                        // draw this portion of the text
+                        String pre = logicalLine.substr(0, line_sel_start);
                         colours = normalTextCol;
-                        fnt->drawText(w->getGeometryBuffer(), sect, lineRect.getPosition(), &dest_area, colours);
-
-                        // set position ready for next portion of text
-                        lineRect.d_min.d_x += selStartOffset;
+                        fnt->drawText(w->getGeometryBuffer(), pre, Vector2f(cur_x, lineRect.d_min.d_y), &dest_area, colours);
+                        cur_x += fnt->getTextAdvance(pre);
                     }
 
-                    // calculate the length of the selected section
-                    sectLen = ceguimin(w->getSelectionEndIndex() - currLine.d_startIdx, currLine.d_length) - sectIdx;
-
-                    // get the text for this section
-                    sect = lineText.substr(sectIdx, sectLen);
-                    sectIdx += sectLen;
-
-                    // get the extent to use as the width of the selection area highlight
-                    selAreaWidth = fnt->getTextAdvance(sect);
-
-                    const float text_top = lineRect.top();
-                    lineRect.top(old_top);
-
-                    // calculate area for the selection brush on this line
-                    lineRect.left(drawArea.left() + selStartOffset);
-                    lineRect.right(lineRect.left() + selAreaWidth);
-                    lineRect.bottom(lineRect.top() + fnt->getLineSpacing());
-
-                    // render the selection area brush for this line
-                    colours = selectBrushCol;
-                    w->getSelectionBrushImage()->render(w->getGeometryBuffer(), lineRect, &dest_area, colours);
-
-                    // draw the text for this section
-                    colours = selectTextCol;
-                    fnt->drawText(w->getGeometryBuffer(), sect, lineRect.getPosition(), &dest_area, colours);
-
-                    lineRect.top(text_top);
-
-                    // render any text beyond selected region of line
-                    if (sectIdx < currLine.d_length)
+                    if (line_sel_end > line_sel_start)
                     {
-                        // update render position to the end of the selected area.
-                        lineRect.d_min.d_x += selAreaWidth;
+                        String sel = logicalLine.substr(line_sel_start, line_sel_end - line_sel_start);
+                        float  selW = fnt->getTextAdvance(sel);
 
-                        // calculate length of this section
-                        sectLen = currLine.d_length - sectIdx;
+                        Rectf hlarea(lineRect);
+                        hlarea.top(old_top);
+                        hlarea.bottom(old_top + fnt->getLineSpacing());
+                        hlarea.left(cur_x);
+                        hlarea.right(cur_x + selW);
+                        w->getSelectionBrushImage()->render(w->getGeometryBuffer(), hlarea, &dest_area, selectBrushCol);
 
-                        // get the text for this section
-                        sect = lineText.substr(sectIdx, sectLen);
+                        colours = selectTextCol;
+                        fnt->drawText(w->getGeometryBuffer(), sel, Vector2f(cur_x, lineRect.d_min.d_y), &dest_area, colours);
+                        cur_x += selW;
+                    }
 
-                        // render the text for this section.
+                    if (line_sel_end < logicalLine.length())
+                    {
+                        String post = logicalLine.substr(line_sel_end);
                         colours = normalTextCol;
-                        fnt->drawText(w->getGeometryBuffer(), sect, lineRect.getPosition(), &dest_area, colours);
+                        fnt->drawText(w->getGeometryBuffer(), post, Vector2f(cur_x, lineRect.d_min.d_y), &dest_area, colours);
                     }
                 }
-
-                // update master position for next line in paragraph.
-                drawArea.d_min.d_y += fnt->getLineSpacing();
             }
+
+            drawArea.d_min.d_y += fnt->getLineSpacing();
         }
     }
 

@@ -41,6 +41,9 @@ ButtonBase::ButtonBase(const String& type, const String& name) :
 	d_pushed(false),
 	d_hovering(false)
 {
+	// Buttons, checkboxes, and radio buttons do not have separate multi-click actions;
+	// every click must register as a standard button press.
+	setWantsMultiClickEvents(false);
 }
 
 
@@ -116,6 +119,28 @@ void ButtonBase::onMouseButtonDown(MouseEventArgs& e)
 		++e.handled;
 	}
 
+}
+
+/*************************************************************************
+	Handler for mouse button double-click events
+*************************************************************************/
+void ButtonBase::onMouseDoubleClicked(MouseEventArgs& e)
+{
+	Window::onMouseDoubleClicked(e);
+
+	// Ensure multi-clicks still push the button
+	onMouseButtonDown(e);
+}
+
+/*************************************************************************
+	Handler for mouse button triple-click events
+*************************************************************************/
+void ButtonBase::onMouseTripleClicked(MouseEventArgs& e)
+{
+	Window::onMouseTripleClicked(e);
+
+	// Ensure multi-clicks still push the button
+	onMouseButtonDown(e);
 }
 
 //----------------------------------------------------------------------------//
