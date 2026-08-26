@@ -25,6 +25,7 @@
  *   OTHER DEALINGS IN THE SOFTWARE.
  ***************************************************************************/
 #include <d3dx9.h>
+#include <emmintrin.h>
 #include "CEGUI/RendererModules/Direct3D9/Texture.h"
 #include "CEGUI/Exceptions.h"
 #include "CEGUI/System.h"
@@ -101,17 +102,39 @@ static void blitRGBToBGRSurface(const uchar* src, uchar* dst, const Sizef& sz)
 static void blitRGBAToD3DCOLORSurface(const uint32* src, uint32* dst,
                                       const Sizef& sz, size_t dest_pitch)
 {
-    for (uint i = 0; i < sz.d_height; ++i)
+    const uint32 width = static_cast<uint32>(sz.d_width);
+    const uint32 height = static_cast<uint32>(sz.d_height);
+    const size_t dst_stride = dest_pitch / sizeof(uint32);
+
+    const __m128i mask_ag = _mm_set1_epi32(static_cast<int>(0xFF00FF00));
+    const __m128i mask_r = _mm_set1_epi32(0x000000FF);
+    const __m128i mask_b = _mm_set1_epi32(0x00FF0000);
+
+    for (uint i = 0; i < height; ++i)
     {
-        for (uint j = 0; j < sz.d_width; ++j)
+        uint32 j = 0;
+
+        // Process 4 pixels (16 bytes = 128 bits) per iteration via SSE2 SIMD
+        for (; j + 4 <= width; j += 4)
+        {
+            __m128i px = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&src[j]));
+            __m128i ag = _mm_and_si128(px, mask_ag);
+            __m128i r = _mm_and_si128(px, mask_r);
+            __m128i b = _mm_and_si128(px, mask_b);
+            __m128i swapped = _mm_or_si128(ag, _mm_or_si128(_mm_slli_epi32(r, 16), _mm_srli_epi32(b, 16)));
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(&dst[j]), swapped);
+        }
+
+        // Scalar fallback for remaining pixels
+        for (; j < width; ++j)
         {
             const uint32 pixel = src[j];
             const uint32 tmp = pixel & 0x00FF00FF;
             dst[j] = (pixel & 0xFF00FF00) | (tmp << 16) | (tmp >> 16);
         }
 
-        dst += dest_pitch / sizeof(uint32);
-        src += static_cast<uint32>(sz.d_width);
+        dst += dst_stride;
+        src += width;
     }
 }
 
@@ -121,17 +144,39 @@ static void blitRGBAToD3DCOLORSurface(const uint32* src, uint32* dst,
 static void blitD3DCOLORSurfaceToRGBA(const uint32* src, uint32* dst,
                                       const Sizef& sz, size_t source_pitch)
 {
-    for (uint i = 0; i < sz.d_height; ++i)
+    const uint32 width = static_cast<uint32>(sz.d_width);
+    const uint32 height = static_cast<uint32>(sz.d_height);
+    const size_t src_stride = source_pitch / sizeof(uint32);
+
+    const __m128i mask_ag = _mm_set1_epi32(static_cast<int>(0xFF00FF00));
+    const __m128i mask_r = _mm_set1_epi32(0x000000FF);
+    const __m128i mask_b = _mm_set1_epi32(0x00FF0000);
+
+    for (uint i = 0; i < height; ++i)
     {
-        for (uint j = 0; j < sz.d_width; ++j)
+        uint32 j = 0;
+
+        // Process 4 pixels (16 bytes = 128 bits) per iteration via SSE2 SIMD
+        for (; j + 4 <= width; j += 4)
+        {
+            __m128i px = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&src[j]));
+            __m128i ag = _mm_and_si128(px, mask_ag);
+            __m128i r = _mm_and_si128(px, mask_r);
+            __m128i b = _mm_and_si128(px, mask_b);
+            __m128i swapped = _mm_or_si128(ag, _mm_or_si128(_mm_slli_epi32(r, 16), _mm_srli_epi32(b, 16)));
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(&dst[j]), swapped);
+        }
+
+        // Scalar fallback for remaining pixels
+        for (; j < width; ++j)
         {
             const uint32 pixel = src[j];
             const uint32 tmp = pixel & 0x00FF00FF;
             dst[j] = (pixel & 0xFF00FF00) | (tmp << 16) | (tmp >> 16);
         }
 
-        src += source_pitch / sizeof(uint32);
-        dst += static_cast<uint32>(sz.d_width);
+        src += src_stride;
+        dst += width;
     }
 }
 
