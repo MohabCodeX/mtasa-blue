@@ -114,7 +114,11 @@ void CGUIListItem_Impl::SetImage(CGUIStaticImage* pImage)
 
 std::string CGUIListItem_Impl::GetText() const
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return m_pListItem->getText().c_str();
+#else
     return CGUI_Impl::GetUTFString(m_pListItem->getText().c_str()).c_str();
+#endif
 }
 
 CEGUI::ListboxItem* CGUIListItem_Impl::GetListItem()

@@ -388,7 +388,11 @@ void CGUIElement_Impl::SetText(const char* szText)
 
 std::string CGUIElement_Impl::GetText()
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    return m_pWindow->getText().c_str();
+#else
     return CGUI_Impl::GetUTFString(m_pWindow->getText().c_str()).c_str();
+#endif
 }
 
 void CGUIElement_Impl::SetAlpha(float fAlpha)
@@ -661,7 +665,7 @@ void CGUIElement_Impl::SetProperty(const char* szProperty, const char* szValue)
     {
         m_pWindow->setProperty(CGUI_Impl::GetUTFString(szProperty), CGUI_Impl::GetUTFString(szValue));
     }
-    catch (CEGUI::Exception e)
+    catch (const CEGUI::Exception&)
     {
     }
 }
@@ -677,7 +681,7 @@ std::string CGUIElement_Impl::GetProperty(const char* szProperty)
         // Return the string. std::string will copy it
         strValue = CGUI_Impl::GetUTFString(m_pWindow->getProperty(CGUI_Impl::GetUTFString(szProperty)).c_str());
     }
-    catch (CEGUI::Exception e)
+    catch (const CEGUI::Exception&)
     {
     }
 

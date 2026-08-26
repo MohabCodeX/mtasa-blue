@@ -410,7 +410,9 @@ void CGUI_Impl::SetResolution(float fWidth, float fHeight)
 
 void CGUI_Impl::Draw()
 {
-    // Redraw the changed elements
+#ifndef MTA_USE_CEGUI_NEXT
+    // In legacy CEGUI 0.4, property mutations did not invalidate parent surfaces reliably.
+    // In CEGUI 0.8.7, element invalidation propagates automatically to RenderingSurfaces in O(1).
     if (!m_RedrawQueue.empty())
     {
         for (const auto handle : m_RedrawQueue)
@@ -422,6 +424,7 @@ void CGUI_Impl::Draw()
         }
         m_RedrawQueue.clear();
     }
+#endif
 
 #ifdef MTA_USE_CEGUI_NEXT
     try

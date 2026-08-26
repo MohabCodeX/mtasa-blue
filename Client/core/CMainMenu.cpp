@@ -431,13 +431,7 @@ void CMainMenu::SetMenuVerticalPosition(int iPosY)
 
 void CMainMenu::SetMenuUnhovered()  // Dehighlight all our items
 {
-    if (m_bIsIngame)  // CEGUI hack
-    {
-        float fAlpha = m_pDisconnect->image->GetAlpha();
-        m_pDisconnect->image->SetAlpha(0.35f);
-        m_pDisconnect->image->SetAlpha(fAlpha);
-        SetItemHoverProgress(m_pDisconnect, 0, false);
-    }
+    SetItemHoverProgress(m_pDisconnect, 0, false);
     m_pHoveredItem = NULL;
     std::deque<sMenuItem*>::iterator it = m_menuItems.begin();
     for (it; it != m_menuItems.end(); it++)
@@ -474,13 +468,6 @@ void CMainMenu::Update()
 
     if (m_bHideGame)
         m_pGraphics->DrawRectangle(0, 0, m_ScreenSize.fX, m_ScreenSize.fY, 0xFF000000);
-
-    if (m_bIsIngame)  // CEGUI hack
-    {
-        float fAlpha = m_pDisconnect->image->GetAlpha();
-        m_pDisconnect->image->SetAlpha(0.35f);
-        m_pDisconnect->image->SetAlpha(fAlpha);
-    }
 
     if (m_bIsFullyVisible)
     {
