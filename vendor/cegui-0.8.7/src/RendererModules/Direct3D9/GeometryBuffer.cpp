@@ -52,9 +52,6 @@ Direct3D9GeometryBuffer::Direct3D9GeometryBuffer(Direct3D9Renderer& owner,
 //----------------------------------------------------------------------------//
 void Direct3D9GeometryBuffer::draw() const
 {
-    RECT saved_clip;
-    d_device->GetScissorRect(&saved_clip);
-
     // setup clip region
     RECT clip;
     clip.left   = static_cast<LONG>(d_clipRect.left());
@@ -77,8 +74,11 @@ void Direct3D9GeometryBuffer::draw() const
         if (d_effect)
             d_effect->performPreRenderFunctions(pass);
 
-        // draw the batches
+        // draw the batches with state caching to eliminate redundant driver calls
         size_t pos = 0;
+        LPDIRECT3DTEXTURE9 lastTexture = reinterpret_cast<LPDIRECT3DTEXTURE9>(static_cast<uintptr_t>(-1));
+        int lastScissor = -1;
+
         BatchList::const_iterator i = d_batches.begin();
         for ( ; i != d_batches.end(); ++i)
         {
@@ -90,25 +90,37 @@ void Direct3D9GeometryBuffer::draw() const
                     continue;
                 }
 
-                d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
-                d_device->SetScissorRect(&clip);
+                if (lastScissor != 1)
+                {
+                    d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
+                    d_device->SetScissorRect(&clip);
+                    lastScissor = 1;
+                }
             }
             else
             {
-                d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+                if (lastScissor != 0)
+                {
+                    d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+                    lastScissor = 0;
+                }
             }
 
-            if (i->texture)
+            if (i->texture != lastTexture)
             {
-                d_device->SetTexture(0, i->texture);
-                d_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-                d_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
-            }
-            else
-            {
-                d_device->SetTexture(0, NULL);
-                d_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG2);
-                d_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+                lastTexture = i->texture;
+                if (i->texture)
+                {
+                    d_device->SetTexture(0, i->texture);
+                    d_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+                    d_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+                }
+                else
+                {
+                    d_device->SetTexture(0, NULL);
+                    d_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG2);
+                    d_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+                }
             }
 
             d_device->DrawPrimitiveUP(D3DPT_TRIANGLELIST, i->vertexCount / 3,
@@ -116,7 +128,8 @@ void Direct3D9GeometryBuffer::draw() const
             pos += i->vertexCount;
         }
 
-        d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+        if (lastScissor == 1)
+            d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
     }
 
     // clean up RenderEffect
@@ -168,6 +181,9 @@ void Direct3D9GeometryBuffer::appendGeometry(const Vertex* const vbuff,
 
     // update size of current batch
     d_batches.back().vertexCount += vertex_count;
+
+    // Reserve capacity upfront to prevent multiple dynamic reallocations during geometry submission
+    d_vertices.reserve(d_vertices.size() + vertex_count);
 
     // buffer these vertices
     D3DVertex vd;
