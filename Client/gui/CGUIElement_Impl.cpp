@@ -445,6 +445,116 @@ bool CGUIElement_Impl::IsAlwaysOnTop()
     return m_pWindow->isAlwaysOnTop();
 }
 
+void CGUIElement_Impl::SetAutoRenderingSurfaceEnabled(bool enabled)
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pWindow)
+        m_pWindow->setUsingAutoRenderingSurface(enabled);
+#endif
+}
+
+bool CGUIElement_Impl::IsAutoRenderingSurfaceEnabled()
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pWindow)
+        return m_pWindow->isUsingAutoRenderingSurface();
+#endif
+    return false;
+}
+
+void CGUIElement_Impl::SetAspectMode(eCGUIAspectMode mode)
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (!m_pWindow)
+        return;
+
+    switch (mode)
+    {
+        case eCGUIAspectMode::AM_SHRINK:
+            m_pWindow->setAspectMode(CEGUI::AM_SHRINK);
+            break;
+        case eCGUIAspectMode::AM_EXPAND:
+            m_pWindow->setAspectMode(CEGUI::AM_EXPAND);
+            break;
+        case eCGUIAspectMode::AM_IGNORE:
+        default:
+            m_pWindow->setAspectMode(CEGUI::AM_IGNORE);
+            break;
+    }
+#endif
+}
+
+eCGUIAspectMode CGUIElement_Impl::GetAspectMode()
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pWindow)
+    {
+        switch (m_pWindow->getAspectMode())
+        {
+            case CEGUI::AM_SHRINK:
+                return eCGUIAspectMode::AM_SHRINK;
+            case CEGUI::AM_EXPAND:
+                return eCGUIAspectMode::AM_EXPAND;
+            case CEGUI::AM_IGNORE:
+            default:
+                return eCGUIAspectMode::AM_IGNORE;
+        }
+    }
+#endif
+    return eCGUIAspectMode::AM_IGNORE;
+}
+
+void CGUIElement_Impl::SetAspectRatio(float ratio)
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pWindow)
+        m_pWindow->setAspectRatio(ratio);
+#endif
+}
+
+float CGUIElement_Impl::GetAspectRatio()
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pWindow)
+        return m_pWindow->getAspectRatio();
+#endif
+    return 1.0f;
+}
+
+void CGUIElement_Impl::SetMousePassThroughEnabled(bool enabled)
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pWindow)
+        m_pWindow->setMousePassThroughEnabled(enabled);
+#endif
+}
+
+bool CGUIElement_Impl::IsMousePassThroughEnabled()
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pWindow)
+        return m_pWindow->isMousePassThroughEnabled();
+#endif
+    return false;
+}
+
+void CGUIElement_Impl::SetPixelAligned(bool enabled)
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pWindow)
+        m_pWindow->setPixelAligned(enabled);
+#endif
+}
+
+bool CGUIElement_Impl::IsPixelAligned()
+{
+#ifdef MTA_USE_CEGUI_NEXT
+    if (m_pWindow)
+        return m_pWindow->isPixelAligned();
+#endif
+    return true;
+}
+
 CRect2D CGUIElement_Impl::AbsoluteToRelative(const CRect2D& Rect)
 {
 #ifdef MTA_USE_CEGUI_NEXT

@@ -203,6 +203,51 @@ bool IsAlwaysOnTop()
     return CGUIElement_Impl::IsAlwaysOnTop();
 };
 
+void SetAutoRenderingSurfaceEnabled(bool enabled)
+{
+    CGUIElement_Impl::SetAutoRenderingSurfaceEnabled(enabled);
+};
+bool IsAutoRenderingSurfaceEnabled()
+{
+    return CGUIElement_Impl::IsAutoRenderingSurfaceEnabled();
+};
+
+void SetAspectMode(eCGUIAspectMode mode)
+{
+    CGUIElement_Impl::SetAspectMode(mode);
+};
+eCGUIAspectMode GetAspectMode()
+{
+    return CGUIElement_Impl::GetAspectMode();
+};
+
+void SetAspectRatio(float ratio)
+{
+    CGUIElement_Impl::SetAspectRatio(ratio);
+};
+float GetAspectRatio()
+{
+    return CGUIElement_Impl::GetAspectRatio();
+};
+
+void SetMousePassThroughEnabled(bool enabled)
+{
+    CGUIElement_Impl::SetMousePassThroughEnabled(enabled);
+};
+bool IsMousePassThroughEnabled()
+{
+    return CGUIElement_Impl::IsMousePassThroughEnabled();
+};
+
+void SetPixelAligned(bool enabled)
+{
+    CGUIElement_Impl::SetPixelAligned(enabled);
+};
+bool IsPixelAligned()
+{
+    return CGUIElement_Impl::IsPixelAligned();
+};
+
 CRect2D AbsoluteToRelative(const CRect2D& Rect)
 {
     return CGUIElement_Impl::AbsoluteToRelative(Rect);

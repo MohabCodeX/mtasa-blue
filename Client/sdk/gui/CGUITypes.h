@@ -68,6 +68,13 @@ enum CGUIHorizontalAlign
     CGUI_ALIGN_HORIZONTALCENTER_WORDWRAP = 6,
 };
 
+enum class eCGUIAspectMode
+{
+    AM_IGNORE = 0,
+    AM_SHRINK = 1,
+    AM_EXPAND = 2,
+};
+
 class CGUIColor
 {
 public:

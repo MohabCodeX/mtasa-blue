@@ -108,6 +108,21 @@ public:
     LUA_DECLARE(GUIMoveToBack);
     LUA_DECLARE(GUIBlur);
     LUA_DECLARE(GUIFocus);
+
+    static bool GUISetAutoRenderingSurface(CClientGUIElement* guiElement, bool enabled);
+    static bool GUIGetAutoRenderingSurface(CClientGUIElement* guiElement);
+
+    static bool        GUISetAspectMode(CClientGUIElement* guiElement, std::string aspectMode);
+    static std::string GUIGetAspectMode(CClientGUIElement* guiElement);
+
+    static bool  GUISetAspectRatio(CClientGUIElement* guiElement, float ratio);
+    static float GUIGetAspectRatio(CClientGUIElement* guiElement);
+
+    static bool GUISetMousePassThroughEnabled(CClientGUIElement* guiElement, bool enabled);
+    static bool GUIGetMousePassThroughEnabled(CClientGUIElement* guiElement);
+
+    static bool GUISetPixelAligned(CClientGUIElement* guiElement, bool enabled);
+    static bool GUIGetPixelAligned(CClientGUIElement* guiElement);
     LUA_DECLARE(GUICheckBoxSetSelected);
     LUA_DECLARE(GUIRadioButtonSetSelected);
     LUA_DECLARE(GUIGetEnabled);

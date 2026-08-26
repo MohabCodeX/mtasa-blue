@@ -472,6 +472,21 @@ public:
     static bool GUIBlur(CClientEntity& Element);
     static bool GUIFocus(CClientEntity& Element);
 
+    static bool GUISetAutoRenderingSurface(CClientEntity& element, bool enabled);
+    static bool GUIGetAutoRenderingSurface(CClientEntity& element, bool& enabled);
+
+    static bool GUISetAspectMode(CClientEntity& element, eCGUIAspectMode mode);
+    static bool GUIGetAspectMode(CClientEntity& element, eCGUIAspectMode& mode);
+
+    static bool GUISetAspectRatio(CClientEntity& element, float ratio);
+    static bool GUIGetAspectRatio(CClientEntity& element, float& ratio);
+
+    static bool GUISetMousePassThroughEnabled(CClientEntity& element, bool enabled);
+    static bool GUIGetMousePassThroughEnabled(CClientEntity& element, bool& enabled);
+
+    static bool GUISetPixelAligned(CClientEntity& element, bool enabled);
+    static bool GUIGetPixelAligned(CClientEntity& element, bool& enabled);
+
     static void GUICheckBoxSetSelected(CClientEntity& Element, bool bFlag);
     static void GUIRadioButtonSetSelected(CClientEntity& Element, bool bFlag);
 

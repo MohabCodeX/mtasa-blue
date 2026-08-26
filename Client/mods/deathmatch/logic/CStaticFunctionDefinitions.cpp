@@ -6100,6 +6100,146 @@ bool CStaticFunctionDefinitions::GUIFocus(CClientEntity& Entity)
     return false;
 }
 
+bool CStaticFunctionDefinitions::GUISetAutoRenderingSurface(CClientEntity& element, bool enabled)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            guiElement.GetCGUIElement()->SetAutoRenderingSurfaceEnabled(enabled);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CStaticFunctionDefinitions::GUIGetAutoRenderingSurface(CClientEntity& element, bool& enabled)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            enabled = guiElement.GetCGUIElement()->IsAutoRenderingSurfaceEnabled();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CStaticFunctionDefinitions::GUISetAspectMode(CClientEntity& element, eCGUIAspectMode mode)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            guiElement.GetCGUIElement()->SetAspectMode(mode);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CStaticFunctionDefinitions::GUIGetAspectMode(CClientEntity& element, eCGUIAspectMode& mode)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            mode = guiElement.GetCGUIElement()->GetAspectMode();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CStaticFunctionDefinitions::GUISetAspectRatio(CClientEntity& element, float ratio)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            guiElement.GetCGUIElement()->SetAspectRatio(ratio);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CStaticFunctionDefinitions::GUIGetAspectRatio(CClientEntity& element, float& ratio)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            ratio = guiElement.GetCGUIElement()->GetAspectRatio();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CStaticFunctionDefinitions::GUISetMousePassThroughEnabled(CClientEntity& element, bool enabled)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            guiElement.GetCGUIElement()->SetMousePassThroughEnabled(enabled);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CStaticFunctionDefinitions::GUIGetMousePassThroughEnabled(CClientEntity& element, bool& enabled)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            enabled = guiElement.GetCGUIElement()->IsMousePassThroughEnabled();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CStaticFunctionDefinitions::GUISetPixelAligned(CClientEntity& element, bool enabled)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            guiElement.GetCGUIElement()->SetPixelAligned(enabled);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CStaticFunctionDefinitions::GUIGetPixelAligned(CClientEntity& element, bool& enabled)
+{
+    if (IS_GUI(&element))
+    {
+        auto& guiElement = static_cast<CClientGUIElement&>(element);
+        if (guiElement.GetCGUIElement())
+        {
+            enabled = guiElement.GetCGUIElement()->IsPixelAligned();
+            return true;
+        }
+    }
+    return false;
+}
+
 void CStaticFunctionDefinitions::GUICheckBoxSetSelected(CClientEntity& Entity, bool bFlag)
 {
     RUN_CHILDREN(GUICheckBoxSetSelected(**iter, bFlag))

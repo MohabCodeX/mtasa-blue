@@ -103,6 +103,21 @@ public:
     virtual void SetAlwaysOnTop(bool bAlwaysOnTop) = 0;
     virtual bool IsAlwaysOnTop() = 0;
 
+    virtual void SetAutoRenderingSurfaceEnabled(bool enabled) = 0;
+    virtual bool IsAutoRenderingSurfaceEnabled() = 0;
+
+    virtual void            SetAspectMode(eCGUIAspectMode mode) = 0;
+    virtual eCGUIAspectMode GetAspectMode() = 0;
+
+    virtual void  SetAspectRatio(float ratio) = 0;
+    virtual float GetAspectRatio() = 0;
+
+    virtual void SetMousePassThroughEnabled(bool enabled) = 0;
+    virtual bool IsMousePassThroughEnabled() = 0;
+
+    virtual void SetPixelAligned(bool enabled) = 0;
+    virtual bool IsPixelAligned() = 0;
+
     virtual void ForceRedraw() = 0;
 
     virtual CRect2D   AbsoluteToRelative(const CRect2D& Rect) = 0;

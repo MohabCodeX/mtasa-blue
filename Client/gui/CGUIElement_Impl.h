@@ -84,6 +84,21 @@ public:
     void SetAlwaysOnTop(bool bAlwaysOnTop);
     bool IsAlwaysOnTop();
 
+    void SetAutoRenderingSurfaceEnabled(bool enabled);
+    bool IsAutoRenderingSurfaceEnabled();
+
+    void            SetAspectMode(eCGUIAspectMode mode);
+    eCGUIAspectMode GetAspectMode();
+
+    void  SetAspectRatio(float ratio);
+    float GetAspectRatio();
+
+    void SetMousePassThroughEnabled(bool enabled);
+    bool IsMousePassThroughEnabled();
+
+    void SetPixelAligned(bool enabled);
+    bool IsPixelAligned();
+
     CRect2D   AbsoluteToRelative(const CRect2D& Rect);
     CVector2D AbsoluteToRelative(const CVector2D& Vector);
 

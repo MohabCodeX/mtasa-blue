@@ -127,6 +127,17 @@ void CLuaGUIDefs::LoadFunctions()
         {"guiSetPosition", GUISetPosition},
         {"guiSetVisible", GUISetVisible},
 
+        {"guiSetAutoRenderingSurface", ArgumentParser<GUISetAutoRenderingSurface>},
+        {"guiGetAutoRenderingSurface", ArgumentParser<GUIGetAutoRenderingSurface>},
+        {"guiSetAspectMode", ArgumentParser<GUISetAspectMode>},
+        {"guiGetAspectMode", ArgumentParser<GUIGetAspectMode>},
+        {"guiSetAspectRatio", ArgumentParser<GUISetAspectRatio>},
+        {"guiGetAspectRatio", ArgumentParser<GUIGetAspectRatio>},
+        {"guiSetMousePassThroughEnabled", ArgumentParser<GUISetMousePassThroughEnabled>},
+        {"guiGetMousePassThroughEnabled", ArgumentParser<GUIGetMousePassThroughEnabled>},
+        {"guiSetPixelAligned", ArgumentParser<GUISetPixelAligned>},
+        {"guiGetPixelAligned", ArgumentParser<GUIGetPixelAligned>},
+
         {"guiBringToFront", GUIBringToFront},
         {"guiMoveToBack", GUIMoveToBack},
         {"guiBlur", GUIBlur},
@@ -267,6 +278,17 @@ void CLuaGUIDefs::AddGuiElementClass(lua_State* luaVM)
     lua_classfunction(luaVM, "setPosition", "guiSetPosition");
     lua_classfunction(luaVM, "setSize", "guiSetSize");
 
+    lua_classfunction(luaVM, "setAutoRenderingSurface", "guiSetAutoRenderingSurface");
+    lua_classfunction(luaVM, "getAutoRenderingSurface", "guiGetAutoRenderingSurface");
+    lua_classfunction(luaVM, "setAspectMode", "guiSetAspectMode");
+    lua_classfunction(luaVM, "getAspectMode", "guiGetAspectMode");
+    lua_classfunction(luaVM, "setAspectRatio", "guiSetAspectRatio");
+    lua_classfunction(luaVM, "getAspectRatio", "guiGetAspectRatio");
+    lua_classfunction(luaVM, "setMousePassThroughEnabled", "guiSetMousePassThroughEnabled");
+    lua_classfunction(luaVM, "getMousePassThroughEnabled", "guiGetMousePassThroughEnabled");
+    lua_classfunction(luaVM, "setPixelAligned", "guiSetPixelAligned");
+    lua_classfunction(luaVM, "getPixelAligned", "guiGetPixelAligned");
+
     lua_classvariable(luaVM, "chatBoxInputActive", NULL, "isChatBoxInputActive");
     lua_classvariable(luaVM, "consoleActive", NULL, "isConsoleActive");
     lua_classvariable(luaVM, "debugViewActive", "setDebugViewActive", "isDebugViewActive");
@@ -286,6 +308,11 @@ void CLuaGUIDefs::AddGuiElementClass(lua_State* luaVM)
     lua_classvariable(luaVM, "size", ArgumentParserWarn<false, OOP_GUISetSize>, ArgumentParserWarn<false, OOP_GUIGetSize>);
     lua_classvariable(luaVM, "position", ArgumentParserWarn<false, OOP_GUISetPosition>, ArgumentParserWarn<false, OOP_GUIGetPosition>);
     lua_classvariable(luaVM, "chatboxCharacterLimit", "setChatboxCharacterLimit", "getChatboxCharacterLimit");
+    lua_classvariable(luaVM, "autoRenderingSurface", "guiSetAutoRenderingSurface", "guiGetAutoRenderingSurface");
+    lua_classvariable(luaVM, "aspectMode", "guiSetAspectMode", "guiGetAspectMode");
+    lua_classvariable(luaVM, "aspectRatio", "guiSetAspectRatio", "guiGetAspectRatio");
+    lua_classvariable(luaVM, "mousePassThroughEnabled", "guiSetMousePassThroughEnabled", "guiGetMousePassThroughEnabled");
+    lua_classvariable(luaVM, "pixelAligned", "guiSetPixelAligned", "guiGetPixelAligned");
 
     lua_registerclass(luaVM, "GuiElement", "Element");
 }
@@ -4134,4 +4161,92 @@ bool CLuaGUIDefs::GUISetChatboxCharacterLimit(int charLimit)
 int CLuaGUIDefs::GUIGetChatboxCharacterLimit()
 {
     return g_pCore->GetChatboxCharacterLimit();
+}
+
+static eCGUIAspectMode StringToAspectMode(const std::string& mode)
+{
+    if (mode == "shrink")
+        return eCGUIAspectMode::AM_SHRINK;
+    if (mode == "expand")
+        return eCGUIAspectMode::AM_EXPAND;
+    return eCGUIAspectMode::AM_IGNORE;
+}
+
+static std::string AspectModeToString(eCGUIAspectMode mode)
+{
+    switch (mode)
+    {
+        case eCGUIAspectMode::AM_SHRINK:
+            return "shrink";
+        case eCGUIAspectMode::AM_EXPAND:
+            return "expand";
+        case eCGUIAspectMode::AM_IGNORE:
+        default:
+            return "ignore";
+    }
+}
+
+bool CLuaGUIDefs::GUISetAutoRenderingSurface(CClientGUIElement* guiElement, bool enabled)
+{
+    return CStaticFunctionDefinitions::GUISetAutoRenderingSurface(*guiElement, enabled);
+}
+
+bool CLuaGUIDefs::GUIGetAutoRenderingSurface(CClientGUIElement* guiElement)
+{
+    bool enabled = false;
+    if (CStaticFunctionDefinitions::GUIGetAutoRenderingSurface(*guiElement, enabled))
+        return enabled;
+    return false;
+}
+
+bool CLuaGUIDefs::GUISetAspectMode(CClientGUIElement* guiElement, std::string aspectMode)
+{
+    return CStaticFunctionDefinitions::GUISetAspectMode(*guiElement, StringToAspectMode(aspectMode));
+}
+
+std::string CLuaGUIDefs::GUIGetAspectMode(CClientGUIElement* guiElement)
+{
+    eCGUIAspectMode mode = eCGUIAspectMode::AM_IGNORE;
+    if (CStaticFunctionDefinitions::GUIGetAspectMode(*guiElement, mode))
+        return AspectModeToString(mode);
+    return "ignore";
+}
+
+bool CLuaGUIDefs::GUISetAspectRatio(CClientGUIElement* guiElement, float ratio)
+{
+    return CStaticFunctionDefinitions::GUISetAspectRatio(*guiElement, ratio);
+}
+
+float CLuaGUIDefs::GUIGetAspectRatio(CClientGUIElement* guiElement)
+{
+    float ratio = 1.0f;
+    if (CStaticFunctionDefinitions::GUIGetAspectRatio(*guiElement, ratio))
+        return ratio;
+    return 1.0f;
+}
+
+bool CLuaGUIDefs::GUISetMousePassThroughEnabled(CClientGUIElement* guiElement, bool enabled)
+{
+    return CStaticFunctionDefinitions::GUISetMousePassThroughEnabled(*guiElement, enabled);
+}
+
+bool CLuaGUIDefs::GUIGetMousePassThroughEnabled(CClientGUIElement* guiElement)
+{
+    bool enabled = false;
+    if (CStaticFunctionDefinitions::GUIGetMousePassThroughEnabled(*guiElement, enabled))
+        return enabled;
+    return false;
+}
+
+bool CLuaGUIDefs::GUISetPixelAligned(CClientGUIElement* guiElement, bool enabled)
+{
+    return CStaticFunctionDefinitions::GUISetPixelAligned(*guiElement, enabled);
+}
+
+bool CLuaGUIDefs::GUIGetPixelAligned(CClientGUIElement* guiElement)
+{
+    bool enabled = true;
+    if (CStaticFunctionDefinitions::GUIGetPixelAligned(*guiElement, enabled))
+        return enabled;
+    return true;
 }
