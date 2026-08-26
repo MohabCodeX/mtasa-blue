@@ -19,7 +19,11 @@ CGUIListItem_Impl::CGUIListItem_Impl(const char* szText, unsigned int uiType, CG
     switch (uiType)
     {
         case TextItem:
+#ifdef MTA_USE_CEGUI_NEXT
+            m_pListItem = new CGUIListboxTextItem(CGUI_Impl::GetUTFString(szText));
+#else
             m_pListItem = new CEGUI::ListboxTextItem(CGUI_Impl::GetUTFString(szText));
+#endif
             break;
         case ImageItem:
 #ifdef MTA_USE_CEGUI_NEXT
@@ -73,6 +77,10 @@ void CGUIListItem_Impl::SetText(const char* pszText, const char* pszSortText)
 {
 #ifdef MTA_USE_CEGUI_NEXT
     m_pListItem->setText(CGUI_Impl::GetUTFString(pszText));
+    if (ItemType == TextItem || ItemType == NumberItem)
+    {
+        reinterpret_cast<CGUIListboxTextItem*>(m_pListItem)->setSortText(pszSortText ? CGUI_Impl::GetUTFString(pszSortText) : "");
+    }
 #else
     m_pListItem->setText(CGUI_Impl::GetUTFString(pszText), pszSortText);
 #endif

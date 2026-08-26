@@ -23,12 +23,40 @@ class CGUIStaticImage;
 class CGUIStaticImage_Impl;
 
 #ifdef MTA_USE_CEGUI_NEXT
-class CGUIListboxNumberItem : public CEGUI::ListboxTextItem
+class CGUIListboxTextItem : public CEGUI::ListboxTextItem
 {
 public:
     using CEGUI::ListboxTextItem::ListboxTextItem;
-    bool operator<(const CEGUI::ListboxItem& rhs) const override { return atoi(getText().c_str()) < atoi(rhs.getText().c_str()); }
-    bool operator>(const CEGUI::ListboxItem& rhs) const override { return atoi(getText().c_str()) > atoi(rhs.getText().c_str()); }
+
+    void                 setSortText(const CEGUI::String& sortText) { m_sortText = sortText; }
+    const CEGUI::String& getSortText() const { return m_sortText.empty() ? getText() : m_sortText; }
+
+    bool operator<(const CEGUI::ListboxItem& rhs) const override
+    {
+        const CGUIListboxTextItem* pRhsText = dynamic_cast<const CGUIListboxTextItem*>(&rhs);
+        if (pRhsText)
+            return getSortText() < pRhsText->getSortText();
+        return getSortText() < rhs.getText();
+    }
+
+    bool operator>(const CEGUI::ListboxItem& rhs) const override
+    {
+        const CGUIListboxTextItem* pRhsText = dynamic_cast<const CGUIListboxTextItem*>(&rhs);
+        if (pRhsText)
+            return getSortText() > pRhsText->getSortText();
+        return getSortText() > rhs.getText();
+    }
+
+private:
+    CEGUI::String m_sortText;
+};
+
+class CGUIListboxNumberItem : public CGUIListboxTextItem
+{
+public:
+    using CGUIListboxTextItem::CGUIListboxTextItem;
+    bool operator<(const CEGUI::ListboxItem& rhs) const override { return atoi(getSortText().c_str()) < atoi(rhs.getText().c_str()); }
+    bool operator>(const CEGUI::ListboxItem& rhs) const override { return atoi(getSortText().c_str()) > atoi(rhs.getText().c_str()); }
 };
 
 class CGUIListboxImageItem : public CEGUI::ListboxItem
