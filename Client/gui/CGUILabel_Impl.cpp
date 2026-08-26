@@ -222,8 +222,18 @@ bool CGUILabel_Impl::IsFrameEnabled()
 
 float CGUILabel_Impl::GetCharacterWidth(int iCharIndex)
 {
-    if (true)
-        return true;
+    const CEGUI::Font* pFont = m_pWindow->getFont();
+    if (pFont)
+    {
+        CEGUI::String text = m_pWindow->getText();
+        if (iCharIndex >= 0 && static_cast<size_t>(iCharIndex) < text.length())
+        {
+            CEGUI::String charStr;
+            charStr.append(1, text[iCharIndex]);
+            return pFont->getTextExtent(charStr);
+        }
+    }
+    return 0.0f;
 }
 
 float CGUILabel_Impl::GetFontHeight()

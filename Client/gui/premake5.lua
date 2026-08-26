@@ -7,6 +7,9 @@ project "GUI"
 
 	filter "system:windows"
 		includedirs { "../../vendor/sparsehash/src/windows" }
+		postbuildcommands {
+			"xcopy /y /d /s /q /i %[%{!wks.location}/../Shared/data/MTA San Andreas/skins] %[%{!wks.location}/../Bin/skins]"
+		}
 
 	filter {}
 		includedirs {

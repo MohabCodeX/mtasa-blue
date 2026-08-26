@@ -82,8 +82,14 @@ void Direct3D9GeometryBuffer::draw() const
         BatchList::const_iterator i = d_batches.begin();
         for ( ; i != d_batches.end(); ++i)
         {
-            if (i->clip && (clip.right > clip.left) && (clip.bottom > clip.top))
+            if (i->clip)
             {
+                if (clip.right <= clip.left || clip.bottom <= clip.top)
+                {
+                    pos += i->vertexCount;
+                    continue;
+                }
+
                 d_device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
                 d_device->SetScissorRect(&clip);
             }

@@ -111,10 +111,15 @@ void WindowRendererManager::addFactory(WindowRendererFactory* wr)
     {
         return;
     }
-    if (d_wrReg.insert(std::make_pair(wr->getName(), wr)).second == false)
+    if (d_wrReg.find(wr->getName()) != d_wrReg.end())
     {
-        CEGUI_THROW(AlreadyExistsException("A WindowRendererFactory named '"+wr->getName()+"' already exist"));
+        Logger::getSingleton().logEvent(
+            "WindowRendererFactory '" + wr->getName() +
+            "' is already registered - keeping existing factory.");
+        return;
     }
+
+    d_wrReg[wr->getName()] = wr;
 
     char addr_buff[32];
     sprintf(addr_buff, "(%p)", static_cast<void*>(wr));

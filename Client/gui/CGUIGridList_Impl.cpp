@@ -293,7 +293,7 @@ int CGUIGridList_Impl::AddRow(bool fast, std::vector<std::pair<SString, bool> >*
     try
     {
 #ifdef MTA_USE_CEGUI_NEXT
-        int iRow = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->addRow(m_iIndex++);
+        int iRow = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->addRow(m_iIndex++, fast);
 #else
         int iRow = reinterpret_cast<CEGUI::MultiColumnList*>(m_pWindow)->addRow(m_iIndex++, fast);
 #endif
@@ -489,12 +489,7 @@ int CGUIGridList_Impl::SetItemText(int iRow, int hColumn, const char* szText, bo
         if (!pItem)
         {
             pItem = new CGUIListItem_Impl(szText, bNumber);
-            CEGUI::ListboxItem* pListboxItem = pItem->GetListItem();
-#ifdef MTA_USE_CEGUI_NEXT
-            list->setItem(pListboxItem, CEGUI::MCLGridRef(iRow, columnIndex));
-#else
-            list->setItem(pListboxItem, CEGUI::MCLGridRef(iRow, columnIndex), bFast);
-#endif
+            list->setItem(pItem->GetListItem(), CEGUI::MCLGridRef(iRow, columnIndex), bFast);
             m_Items[pItem->GetListItem()] = pItem;
         }
 

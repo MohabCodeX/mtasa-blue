@@ -24,7 +24,10 @@ CGUITexture_Impl::CGUITexture_Impl(CGUI_Impl* pGUI)
 
 #ifdef MTA_USE_CEGUI_NEXT
     char szUnique[CGUI_CHAR_SIZE];
-    pGUI->GetUniqueName(szUnique);
+    do
+    {
+        pGUI->GetUniqueName(szUnique);
+    } while (m_pRenderer->isTextureDefined(szUnique));
     m_pTexture = &m_pRenderer->createTexture(szUnique);
 #else
     // Create the texture

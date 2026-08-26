@@ -182,8 +182,8 @@ void CNewsBrowser::CreateGUI()
 
     // Create the tab panel and necessary tabs
     m_pTabPanel = reinterpret_cast<CGUITabPanel*>(pManager->CreateTabPanel(m_pWindow));
-    m_pTabPanel->SetPosition(CVector2D(0, 20.0f));
-    m_pTabPanel->SetSize(CVector2D(640.0f, 480.0f - 60));
+    m_pTabPanel->SetPosition(CVector2D(10.0f, 20.0f));
+    m_pTabPanel->SetSize(CVector2D(640.0f - 20.0f, 480.0f - 60.0f));
 
     for (uint i = 0; i < m_NewsitemList.size(); i++)
     {

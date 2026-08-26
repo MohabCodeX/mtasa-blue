@@ -56,6 +56,8 @@ ScrollablePane::ScrollablePane(const String& type, const String& name) :
     Window(type, name),
     d_forceVertScroll(false),
     d_forceHorzScroll(false),
+    d_enableVertScroll(true),
+    d_enableHorzScroll(true),
     d_contentRect(0, 0, 0, 0),
     d_vertStep(0.1f),
     d_vertOverlap(0.01f),
@@ -105,6 +107,22 @@ void ScrollablePane::setShowVertScrollbar(bool setting)
 }
 
 //----------------------------------------------------------------------------//
+bool ScrollablePane::isVertScrollEnabled(void) const
+{
+    return d_enableVertScroll;
+}
+
+//----------------------------------------------------------------------------//
+void ScrollablePane::setEnableVertScroll(bool setting)
+{
+    if (d_enableVertScroll != setting)
+    {
+        d_enableVertScroll = setting;
+        configureScrollbars();
+    }
+}
+
+//----------------------------------------------------------------------------//
 bool ScrollablePane::isHorzScrollbarAlwaysShown(void) const
 {
     return d_forceHorzScroll;
@@ -120,6 +138,22 @@ void ScrollablePane::setShowHorzScrollbar(bool setting)
         configureScrollbars();
         WindowEventArgs args(this);
         onHorzScrollbarModeChanged(args);
+    }
+}
+
+//----------------------------------------------------------------------------//
+bool ScrollablePane::isHorzScrollEnabled(void) const
+{
+    return d_enableHorzScroll;
+}
+
+//----------------------------------------------------------------------------//
+void ScrollablePane::setEnableHorzScroll(bool setting)
+{
+    if (d_enableHorzScroll != setting)
+    {
+        d_enableHorzScroll = setting;
+        configureScrollbars();
     }
 }
 
@@ -319,6 +353,8 @@ void ScrollablePane::configureScrollbars(void)
 //----------------------------------------------------------------------------//
 bool ScrollablePane::isHorzScrollbarNeeded(void) const
 {
+    if (!d_enableHorzScroll)
+        return false;
     return ((fabs(d_contentRect.getWidth()) > getViewableArea().getWidth()) ||
             d_forceHorzScroll);
 }
@@ -326,6 +362,8 @@ bool ScrollablePane::isHorzScrollbarNeeded(void) const
 //----------------------------------------------------------------------------//
 bool ScrollablePane::isVertScrollbarNeeded(void) const
 {
+    if (!d_enableVertScroll)
+        return false;
     return ((fabs(d_contentRect.getHeight()) > getViewableArea().getHeight()) ||
             d_forceVertScroll);
 }

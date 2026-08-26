@@ -18,6 +18,9 @@ utils\premake5.exe %PREMAKE5_FLAGS% install_unifont
 rem Update discord-rpc
 utils\premake5.exe %PREMAKE5_FLAGS% install_discord
 
+rem Update Data and Skins
+utils\premake5.exe %PREMAKE5_FLAGS% install_data
+
 rem Generate solutions
 utils\premake5.exe %PREMAKE5_FLAGS% vs2026
 

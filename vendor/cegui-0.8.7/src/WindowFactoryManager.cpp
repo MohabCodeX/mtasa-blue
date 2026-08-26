@@ -74,12 +74,13 @@ void WindowFactoryManager::addFactory(WindowFactory* factory)
             "The provided WindowFactory pointer was invalid."));
 	}
 
-	// throw exception if type name for factory is already in use
+	// ignore if type name for factory is already in use
 	if (d_factoryRegistry.find(factory->getTypeName()) != d_factoryRegistry.end())
 	{
-		CEGUI_THROW(AlreadyExistsException(
-            "A WindowFactory for type '" + factory->getTypeName() +
-            "' is already registered."));
+		Logger::getSingleton().logEvent(
+            "WindowFactory for '" + factory->getTypeName() +
+            "' is already registered - keeping existing factory.");
+		return;
 	}
 
 	// add the factory to the registry

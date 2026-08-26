@@ -179,6 +179,12 @@ public:
     */
     void setShowHorzScrollbar(bool setting);
 
+    bool isVertScrollEnabled(void) const;
+    void setEnableVertScroll(bool setting);
+
+    bool isHorzScrollEnabled(void) const;
+    void setEnableHorzScroll(bool setting);
+
     /*!
     \brief
         Return whether the content pane is auto sized.
@@ -575,6 +581,10 @@ protected:
     bool d_forceVertScroll;
     //! true if horizontal scrollbar should always be displayed
     bool d_forceHorzScroll;
+    //! true if vertical scrollbar is allowed to be displayed
+    bool d_enableVertScroll;
+    //! true if horizontal scrollbar is allowed to be displayed
+    bool d_enableHorzScroll;
     //! holds content area so we can track changes.
     Rectf d_contentRect;
     //! vertical scroll step fraction.

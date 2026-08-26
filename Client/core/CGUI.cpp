@@ -81,6 +81,7 @@ void CLocalGUI::SetSkin(const char* szName)
     CVector2D consolePos, consoleSize;
 
     bool guiWasLoaded = m_pMainMenu != NULL;
+    bool isModLoaded = CCore::GetSingleton().GetModManager()->IsLoaded();
     if (guiWasLoaded)
     {
         consolePos = m_pConsole->GetPosition();
@@ -126,7 +127,7 @@ void CLocalGUI::SetSkin(const char* szName)
 
     if (guiWasLoaded)
     {
-        CreateWindows(guiWasLoaded);
+        CreateWindows(isModLoaded);
         m_pConsole->SetPosition(consolePos);
         m_pConsole->SetSize(consoleSize);
         // QuestionBox was destroyed with MainMenu; re-show if settings still need a restart
@@ -150,6 +151,7 @@ void CLocalGUI::ChangeLocale(const char* szName)
         return;
 
     bool guiWasLoaded = m_pMainMenu != NULL;
+    bool isModLoaded = CCore::GetSingleton().GetModManager()->IsLoaded();
     assert(guiWasLoaded);
 
     CVector2D consolePos = m_pConsole->GetPosition();
@@ -177,7 +179,7 @@ void CLocalGUI::ChangeLocale(const char* szName)
 
     if (guiWasLoaded)
     {
-        CreateWindows(guiWasLoaded);
+        CreateWindows(isModLoaded);
         m_pConsole->SetPosition(consolePos);
         m_pConsole->SetSize(consoleSize);
         // QuestionBox was destroyed with MainMenu; re-show if settings still need a restart
@@ -458,7 +460,7 @@ void CLocalGUI::SetFaultDialogOpen(bool bOpen) noexcept
 }
 
 // Error reporting for SEH faults in GUI rendering
-static void ReportGUISEHFault(DWORD dwExceptionCode, const char* szContext)
+static void ReportGUISEHFault(DWORD dwExceptionCode, EXCEPTION_POINTERS* pExceptionPointers, const char* szContext)
 {
     // A nested fault can fire while this dialog pumps the message loop (the
     // game frame keeps running). Show one dialog, then terminate immediately.
@@ -469,12 +471,18 @@ static void ReportGUISEHFault(DWORD dwExceptionCode, const char* szContext)
     }
     CLocalGUI::SetFaultDialogOpen(true);
 
+    void*     faultAddress = (pExceptionPointers && pExceptionPointers->ExceptionRecord) ? pExceptionPointers->ExceptionRecord->ExceptionAddress : nullptr;
+    ULONG_PTR targetAddress = (pExceptionPointers && pExceptionPointers->ExceptionRecord && pExceptionPointers->ExceptionRecord->NumberParameters >= 2)
+                                  ? pExceptionPointers->ExceptionRecord->ExceptionInformation[1]
+                                  : 0;
+
     SString strMsg(
-        "Rendering fault in %s (code 0x%08X).\n\n"
+        "Rendering fault in %s (code 0x%08X at %p accessing 0x%p).\n\n"
         "Usually caused by missing GUI/loading-screen assets.\n\n"
         "Please verify game files or reinstall.",
-        szContext, dwExceptionCode);
-    WriteDebugEvent(SString("CLocalGUI::Draw SEH fault in %s code=0x%08X", szContext, dwExceptionCode));
+        szContext, dwExceptionCode, faultAddress, reinterpret_cast<void*>(targetAddress));
+    WriteDebugEvent(SString("CLocalGUI::Draw SEH fault in %s code=0x%08X at %p accessing 0x%p", szContext, dwExceptionCode, faultAddress,
+                            reinterpret_cast<void*>(targetAddress)));
     MessageBoxUTF8(0, strMsg, _("Error") + _E("CC54"), MB_OK | MB_ICONERROR | MB_TOPMOST);
     TerminateProcess(GetCurrentProcess(), 9);
 }
@@ -482,10 +490,13 @@ static void ReportGUISEHFault(DWORD dwExceptionCode, const char* szContext)
 // SEH filter for GUI rendering faults. Access violations and C++ exceptions
 // (CEGUI errors) are the common failures with missing or corrupt GUI assets;
 // other faults are left for the wider OnPresent guard.
-static int FilterGUISehFault(unsigned int uiExceptionCode)
+static int FilterGUISehFault(unsigned int uiExceptionCode, EXCEPTION_POINTERS* pExceptionPointers)
 {
     if (uiExceptionCode == EXCEPTION_ACCESS_VIOLATION || uiExceptionCode == CPP_EXCEPTION_CODE)
+    {
+        ReportGUISEHFault(uiExceptionCode, pExceptionPointers, "CLocalGUI::Draw");
         return EXCEPTION_EXECUTE_HANDLER;
+    }
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
@@ -496,9 +507,8 @@ static void DrawSEHGuard(CLocalGUI* pLocalGUI)
     {
         pLocalGUI->DrawInternal();
     }
-    __except (FilterGUISehFault(GetExceptionCode()))
+    __except (FilterGUISehFault(GetExceptionCode(), GetExceptionInformation()))
     {
-        ReportGUISEHFault(GetExceptionCode(), "CLocalGUI::Draw");
     }
 }
 

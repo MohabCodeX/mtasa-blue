@@ -1,8 +1,8 @@
 /***********************************************************************
-	created:	13/6/2004
-	author:		Paul D Turner
+    created:	13/6/2004
+    author:		Paul D Turner
 
-	purpose:	Interface for the Combobox Drop-List widget base class
+    purpose:	Interface for the Combobox Drop-List widget base class
 *************************************************************************/
 /***************************************************************************
  *   Copyright (C) 2004 - 2006 Paul D Turner & The CEGUI Development Team
@@ -31,164 +31,154 @@
 
 #include "./Listbox.h"
 
-
 #if defined(_MSC_VER)
-#	pragma warning(push)
-#	pragma warning(disable : 4251)
+    #pragma warning(push)
+    #pragma warning(disable : 4251)
 #endif
-
 
 // Start of CEGUI namespace section
 namespace CEGUI
 {
-/*!
-\brief
-	Base class for the combo box drop down list.  This is a specialisation of the Listbox class.
-*/
-class CEGUIEXPORT ComboDropList : public Listbox
-{
-public:
-	static const String EventNamespace;				//!< Namespace for global events
-    static const String WidgetTypeName;             //!< Window factory name
+    /*!
+    \brief
+        Base class for the combo box drop down list.  This is a specialisation of the Listbox class.
+    */
+    class CEGUIEXPORT ComboDropList : public Listbox
+    {
+    public:
+        static const String EventNamespace;  //!< Namespace for global events
+        static const String WidgetTypeName;  //!< Window factory name
 
+        /*************************************************************************
+            Constants
+        *************************************************************************/
+        // Event names
+        /** Event fired when the user confirms the selection by clicking the mouse.
+         * Handlers are passed a const WindowEventArgs reference with
+         * WindowEventArgs::window set to the ComboDropList whose selection has been
+         * confirmed by the user.
+         */
+        static const String EventListSelectionAccepted;
 
-	/*************************************************************************
-		Constants
-	*************************************************************************/
-	// Event names
-    /** Event fired when the user confirms the selection by clicking the mouse.
-     * Handlers are passed a const WindowEventArgs reference with
-     * WindowEventArgs::window set to the ComboDropList whose selection has been
-     * confirmed by the user.
-     */
-	static const String EventListSelectionAccepted;
+        /*!
+        \brief
+            Initialise the Window based object ready for use.
 
+        \note
+            This must be called for every window created.  Normally this is handled automatically by the WindowFactory for each Window type.
 
-	/*!
-	\brief
-		Initialise the Window based object ready for use.
+        \return
+            Nothing
+        */
+        virtual void initialiseComponents(void);
 
-	\note
-		This must be called for every window created.  Normally this is handled automatically by the WindowFactory for each Window type.
+        /*!
+        \brief
+            Set whether the drop-list is 'armed' for selection.
 
-	\return
-		Nothing
-	*/
-	virtual void	initialiseComponents(void);
+        \note
+            This setting is not exclusively under client control; the ComboDropList will auto-arm in
+            response to certain left mouse button events.  This is also dependant upon the autoArm
+            setting of the ComboDropList.
 
+        \param setting
+            - true to arm the box; items will be highlighted and the next left button up event
+            will cause dismissal and possible item selection.
 
-	/*!
-	\brief
-		Set whether the drop-list is 'armed' for selection.
+            - false to disarm the box; items will not be highlighted or selected until the box is armed.
 
-	\note
-		This setting is not exclusively under client control; the ComboDropList will auto-arm in
-		response to certain left mouse button events.  This is also dependant upon the autoArm
-		setting of the ComboDropList.
+        \return
+            Nothing.
+        */
+        void setArmed(bool setting) { d_armed = setting; }
 
-	\param setting
-		- true to arm the box; items will be highlighted and the next left button up event
-		will cause dismissal and possible item selection.
+        /*!
+        \brief
+            Return the 'armed' state of the ComboDropList.
 
-		- false to disarm the box; items will not be highlighted or selected until the box is armed.
+        \return
+            - true if the box is armed; items will be highlighted and the next left button up event
+            will cause dismissal and possible item selection.
 
-	\return
-		Nothing.
-	*/
-	void	setArmed(bool setting)		{ d_armed = setting; }
+            - false if the box is not armed; items will not be highlighted or selected until the box is armed.
+        */
+        bool isArmed(void) const { return d_armed; }
 
+        /*!
+        \brief
+            Set the mode of operation for the ComboDropList.
 
-	/*!
-	\brief
-		Return the 'armed' state of the ComboDropList.
+        \param setting
+            - true if the ComboDropList auto-arms when the mouse enters the box.
+            - false if the user must click to arm the box.
 
-	\return
-		- true if the box is armed; items will be highlighted and the next left button up event
-		will cause dismissal and possible item selection.
+        \return
+            Nothing.
+        */
+        void setAutoArmEnabled(bool setting) { d_autoArm = setting; }
 
-		- false if the box is not armed; items will not be highlighted or selected until the box is armed.
-	*/
-	bool	isArmed(void) const		{ return d_armed; }
+        /*!
+        \brief
+            returns the mode of operation for the drop-list
 
+        \return
+            - true if the ComboDropList auto-arms when the mouse enters the box.
+            - false if the user must click to arm the box.
+        */
+        bool isAutoArmEnabled(void) const { return d_autoArm; }
 
-	/*!
-	\brief
-		Set the mode of operation for the ComboDropList.
+        //! resize the widget such that the content is shown without scrollbars.
+        void resizeToContent(bool fit_width, bool fit_height);
 
-	\param setting
-		- true if the ComboDropList auto-arms when the mouse enters the box.
-		- false if the user must click to arm the box.
+        /*************************************************************************
+            Constructor & Destructor
+        *************************************************************************/
+        /*!
+        \brief
+            Constructor for ComboDropList base class
+        */
+        ComboDropList(const String& type, const String& name);
 
-	\return
-		Nothing.
-	*/
-	void	setAutoArmEnabled(bool setting)		{ d_autoArm = setting; }
+        /*!
+        \brief
+            Destructor for ComboDropList base class
+        */
+        virtual ~ComboDropList(void);
 
+    protected:
+        /*************************************************************************
+            New event handlers
+        *************************************************************************/
+        /*!
+        \brief
+            Handler for when list selection is confirmed.
+        */
+        void onListSelectionAccepted(WindowEventArgs& e);
 
-	/*!
-	\brief
-		returns the mode of operation for the drop-list
+        /*************************************************************************
+            Overridden Event handling
+        *************************************************************************/
+        virtual void onMouseMove(MouseEventArgs& e);
+        virtual void onMouseButtonDown(MouseEventArgs& e);
+        virtual void onMouseButtonUp(MouseEventArgs& e);
+        virtual void onCaptureLost(WindowEventArgs& e);
+        virtual void onActivated(ActivationEventArgs& e);
+        virtual void onListContentsChanged(WindowEventArgs& e);
+        virtual void onSelectionChanged(WindowEventArgs& e);
+        virtual void onShown(WindowEventArgs& e);
 
-	\return
-		- true if the ComboDropList auto-arms when the mouse enters the box.
-		- false if the user must click to arm the box.
-	*/
-	bool	isAutoArmEnabled(void) const		{ return d_autoArm; }
+        /*************************************************************************
+            Implementation Data
+        *************************************************************************/
+        bool         d_autoArm;            //!< true if the box auto-arms when the mouse enters it.
+        bool         d_armed;              //!< true when item selection has been armed.
+        ListboxItem* d_lastClickSelected;  //!< Item last accepted by user.
+    };
 
-    //! resize the widget such that the content is shown without scrollbars.
-    void resizeToContent(bool fit_width, bool fit_height);
-
-	/*************************************************************************
-		Constructor & Destructor
-	*************************************************************************/
-	/*!
-	\brief
-		Constructor for ComboDropList base class
-	*/
-	ComboDropList(const String& type, const String& name);
-
-
-	/*!
-	\brief
-		Destructor for ComboDropList base class
-	*/
-	virtual ~ComboDropList(void);
-
-
-protected:
-	/*************************************************************************
-		New event handlers
-	*************************************************************************/
-	/*!
-	\brief
-		Handler for when list selection is confirmed.
-	*/
-	void	onListSelectionAccepted(WindowEventArgs& e);
-
-
-	/*************************************************************************
-		Overridden Event handling
-	*************************************************************************/
-	virtual void	onMouseMove(MouseEventArgs& e);
-	virtual void	onMouseButtonDown(MouseEventArgs& e);
-	virtual void	onMouseButtonUp(MouseEventArgs& e);
-	virtual void	onCaptureLost(WindowEventArgs& e);
-	virtual void	onActivated(ActivationEventArgs& e);
-    virtual void    onListContentsChanged(WindowEventArgs& e);
-    virtual void    onSelectionChanged(WindowEventArgs& e);
-
-	/*************************************************************************
-		Implementation Data
-	*************************************************************************/
-	bool	d_autoArm;		//!< true if the box auto-arms when the mouse enters it.
-	bool	d_armed;		//!< true when item selection has been armed.
-    ListboxItem* d_lastClickSelected; //!< Item last accepted by user.
-};
-
-} // End of  CEGUI namespace section
+}  // End of  CEGUI namespace section
 
 #if defined(_MSC_VER)
-#	pragma warning(pop)
+    #pragma warning(pop)
 #endif
 
-#endif	// end of guard _CEGUIComboDropList_h_
+#endif  // end of guard _CEGUIComboDropList_h_

@@ -32,6 +32,7 @@
 #include "CEGUI/widgets/Scrollbar.h"
 #include "CEGUI/widgets/ListHeader.h"
 #include "CEGUI/widgets/ListboxItem.h"
+#include "CEGUI/Font.h"
 
 // Start of CEGUI namespace section
 namespace CEGUI
@@ -102,20 +103,49 @@ namespace CEGUI
         // calculate position of area we have to render into
         Rectf itemsArea(getListRenderArea());
 
+        const float defaultRowHeight = w->getFont() ? w->getFont()->getFontHeight() : 16.0f;
+        const float scrollY = vertScrollbar->getScrollPosition();
+
+        uint startRow = 0;
+        float currentY = itemsArea.top() - scrollY;
+
+        if (scrollY > 0.0f && defaultRowHeight > 0.0f && w->getRowCount() > 30)
+        {
+            uint estimatedRow = static_cast<uint>(scrollY / defaultRowHeight);
+            if (estimatedRow > 0)
+            {
+                startRow = (estimatedRow < w->getRowCount()) ? (estimatedRow - 1) : (w->getRowCount() - 1);
+                currentY += startRow * defaultRowHeight;
+            }
+        }
+
         // set up initial positional details for items
-        itemPos.d_y = itemsArea.top() - vertScrollbar->getScrollPosition();
+        itemPos.d_y = currentY;
         itemPos.d_z = 0.0f;
 
         const float alpha = w->getEffectiveAlpha();
 
         // loop through the items
-        for (uint i = 0; i < w->getRowCount(); ++i)
+        for (uint i = startRow; i < w->getRowCount(); ++i)
         {
+            // calculate height for this row.
+            itemSize.d_height = defaultRowHeight;
+
+            // Skip this row if it is completely above the visible area
+            if (itemPos.d_y + itemSize.d_height < itemsArea.top())
+            {
+                itemPos.d_y += itemSize.d_height;
+                continue;
+            }
+
+            // Stop processing if this row is completely below the visible area
+            if (itemPos.d_y > itemsArea.bottom())
+            {
+                break;
+            }
+
             // set initial x position for this row.
             itemPos.d_x = itemsArea.left() - horzScrollbar->getScrollPosition();
-
-            // calculate height for this row.
-            itemSize.d_height = w->getHighestRowItemHeight(i);
 
             // loop through the columns in this row
             for (uint j = 0; j < w->getColumnCount(); ++j)

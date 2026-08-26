@@ -79,7 +79,7 @@ namespace CEGUI
 
         if (d_vertical)
         {
-            if(w->getPixelSize().d_height != 0.0f && posExtent != 0.0f)
+            if(w->getPixelSize().d_height != 0.0f && posExtent > 0.0f)
             {
                 slideExtent = area.getHeight() - theThumb->getPixelSize().d_height;
                 theThumb->setVertRange(area.top() / w->getPixelSize().d_height, (area.top() + slideExtent) / w->getPixelSize().d_height);
@@ -94,7 +94,7 @@ namespace CEGUI
         }
         else
         {
-            if(w->getPixelSize().d_width != 0.0f && posExtent != 0.0f)
+            if(w->getPixelSize().d_width != 0.0f && posExtent > 0.0f)
             {
                 slideExtent = area.getWidth() - theThumb->getPixelSize().d_width;
                 theThumb->setHorzRange(area.left() / w->getPixelSize().d_width, (area.left() + slideExtent)  / w->getPixelSize().d_width);
@@ -121,11 +121,15 @@ namespace CEGUI
         if (d_vertical)
         {
             float slideExtent = area.getHeight() - theThumb->getPixelSize().d_height;
+            if (slideExtent <= 0.0f || posExtent <= 0.0f)
+                return 0.0f;
             return (CoordConverter::asAbsolute(theThumb->getYPosition(), w->getPixelSize().d_height) - area.top()) / (slideExtent / posExtent);
         }
         else
         {
             float slideExtent = area.getWidth() - theThumb->getPixelSize().d_width;
+            if (slideExtent <= 0.0f || posExtent <= 0.0f)
+                return 0.0f;
             return (CoordConverter::asAbsolute(theThumb->getXPosition(), w->getPixelSize().d_width) - area.left()) / (slideExtent / posExtent);
         }
     }

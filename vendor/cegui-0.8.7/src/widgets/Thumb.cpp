@@ -126,15 +126,15 @@ void Thumb::setHorzRange(float min, float max)
 	d_horzMin = min;
 
 	// validate current position.
-	const float cp = CoordConverter::asAbsolute(getXPosition(), parentSize.d_width);
+	const float cp = CoordConverter::asRelative(getXPosition(), parentSize.d_width);
 
 	if (cp < min)
 	{
-		setXPosition(cegui_absdim(min));
+		setXPosition(cegui_reldim(min));
 	}
 	else if (cp > max)
 	{
-		setXPosition(cegui_absdim(max));
+		setXPosition(cegui_reldim(max));
 	}
 
 }

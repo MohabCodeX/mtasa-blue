@@ -918,7 +918,7 @@ public:
 	\return
 		Initial zero based index of the new row.
 	*/
-	uint	addRow(uint row_id = 0);
+	uint	addRow(uint row_id = 0, bool fast = false);
 
 
 	/*!
@@ -938,12 +938,15 @@ public:
 	\param row_id
 		ID code to be assigned to the new row.
 
+	\param fast
+		Set to true to skip expensive event signalling and scrollbar recalculation during bulk row insertions.
+
 	\return
 		Initial zero based index of the new row.
 
 	\exception InvalidRequestException	thrown if no column with the specified ID is attached to the list box.
 	*/
-	uint	addRow(ListboxItem* item, uint col_id, uint row_id = 0);
+	uint	addRow(ListboxItem* item, uint col_id, uint row_id = 0, bool fast = false);
 
 
 	/*!
@@ -1026,7 +1029,7 @@ public:
 
 	\exception InvalidRequestException	thrown if \a position contains an invalid grid reference.
 	*/
-	void	setItem(ListboxItem* item, const MCLGridRef& position);
+	void	setItem(ListboxItem* item, const MCLGridRef& position, bool fast = false);
 
 
 	/*!
@@ -1047,7 +1050,7 @@ public:
 
 	\exception InvalidRequestException	thrown if no column with ID \a col_id exists, or of \a row_idx is out of range.
 	*/
-	void	setItem(ListboxItem* item, uint col_id, uint row_idx);
+	void	setItem(ListboxItem* item, uint col_id, uint row_idx, bool fast = false);
 
 
 	/*!

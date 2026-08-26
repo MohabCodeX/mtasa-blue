@@ -98,6 +98,8 @@ void CLanguageSelector::CreateGUI(CGUIElement* pMainMenuCanvas)
         m_pButtonWindow->SetAlwaysOnTop(true);
         m_pButtonWindow->MoveToBack();
         m_pButtonWindow->SetVisible(true);
+        m_pButtonWindow->SetHorizontalScrollBar(false);
+        m_pButtonWindow->SetVerticalScrollBar(false);
 
         CVector2D vecItemPosition(BUTTON_MARGIN_X, BUTTON_MARGIN_Y);
 
@@ -111,6 +113,8 @@ void CLanguageSelector::CreateGUI(CGUIElement* pMainMenuCanvas)
         pContainerPane->SetZOrderingEnabled(false);
         pContainerPane->SetAlwaysOnTop(true);
         pContainerPane->SetVisible(true);
+        pContainerPane->SetHorizontalScrollBar(false);
+        pContainerPane->SetVerticalScrollBar(false);
 
         CGUIStaticImage* pIcon = reinterpret_cast<CGUIStaticImage*>(g_pCore->GetGUI()->CreateStaticImage(m_pButtonWindow));
         pIcon->SetPosition(vecIconPos);
@@ -205,6 +209,8 @@ CLangListItem CLanguageSelector::CreateGUILangItem(CGUIElement* pGUIParent, cons
     pContainerPane->SetZOrderingEnabled(false);
     pContainerPane->SetAlwaysOnTop(true);
     pContainerPane->SetVisible(true);
+    pContainerPane->SetHorizontalScrollBar(false);
+    pContainerPane->SetVerticalScrollBar(false);
 
     CGUILabel* pLabel = reinterpret_cast<CGUILabel*>(g_pCore->GetGUI()->CreateLabel(pGUIParent));
     pLabel->SetPosition(vecLabelPos);

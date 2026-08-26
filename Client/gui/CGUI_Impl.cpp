@@ -235,7 +235,43 @@ void CGUI_Impl::SetSkin(const char* szName)
     {
         CEGUI::GlobalEventSet::getSingletonPtr()->removeAllEvents();
 #ifdef MTA_USE_CEGUI_NEXT
-        CEGUI::SchemeManager::getSingleton().destroy(m_CurrentSchemeName.c_str());
+        if (m_pDefaultGUIContext)
+        {
+            // Null out both active and default cursor images and invalidate cursor geometry buffer
+            // to ensure no dangling pointer or freed Direct3D9 texture batch survives skin destruction.
+            m_pDefaultGUIContext->getMouseCursor().setImage(static_cast<const CEGUI::Image*>(nullptr));
+            m_pDefaultGUIContext->getMouseCursor().setDefaultImage(static_cast<const CEGUI::Image*>(nullptr));
+            m_pDefaultGUIContext->getMouseCursor().invalidate();
+            m_pDefaultGUIContext->setRootWindow(nullptr);
+            m_pDefaultGUIContext->clearGeometry();
+        }
+        m_pCursor = nullptr;
+
+        CleanDeadPool();
+        if (m_ScriptRoot)
+        {
+            delete m_ScriptRoot;
+            m_ScriptRoot = nullptr;
+        }
+        m_ScriptTop = nullptr;
+        m_pTop = nullptr;
+
+        if (m_pWindowManager)
+        {
+            m_pWindowManager->destroyAllWindows();
+            m_pWindowManager->cleanDeadPool();
+        }
+
+        m_RedrawQueue.clear();
+        m_RedrawRegistry.clear();
+
+        if (CEGUI::SchemeManager::getSingleton().isDefined(m_CurrentSchemeName.c_str()))
+        {
+            CEGUI::SchemeManager::getSingleton().destroy(m_CurrentSchemeName.c_str());
+        }
+        CEGUI::WidgetLookManager::getSingleton().eraseAllWidgetLooks();
+        CEGUI::ImageManager::getSingleton().destroyImageCollection("CGUI-Images", true);
+        CEGUI::WindowFactoryManager::getSingleton().removeAllFalagardWindowMappings();
 #else
         CEGUI::SchemeManager::getSingleton().unloadScheme(m_CurrentSchemeName);
 #endif
@@ -256,14 +292,16 @@ void CGUI_Impl::SetSkin(const char* szName)
 
 #ifdef MTA_USE_CEGUI_NEXT
     m_pDefaultGUIContext->getMouseCursor().setDefaultImage("CGUI-Images/MouseArrow");
-#else
-    CEGUI::System::getSingleton().setDefaultMouseCursor("CGUI-Images", "MouseArrow");
-#endif
+    m_pDefaultGUIContext->getMouseCursor().setImage("CGUI-Images/MouseArrow");
+    m_pDefaultGUIContext->getMouseCursor().invalidate();
 
-    // Clean up CEGUI - this also re-creates the root window
-    Cleanup();
+    // Recreate the root window
+    CreateRootWindow();
 
-#ifdef MTA_USE_CEGUI_NEXT
+    // Clear stale render queues and mark dirty
+    m_pDefaultGUIContext->clearGeometry();
+    m_pDefaultGUIContext->markAsDirty();
+
     // Disable single click timeouts
     m_pDefaultGUIContext->setMouseButtonMultiClickTimeout(100000000.0f);
 
@@ -274,6 +312,11 @@ void CGUI_Impl::SetSkin(const char* szName)
     // Grab our default cursor
     m_pCursor = const_cast<CEGUI::Image*>(m_pDefaultGUIContext->getMouseCursor().getDefaultImage());
 #else
+    CEGUI::System::getSingleton().setDefaultMouseCursor("CGUI-Images", "MouseArrow");
+
+    // Clean up CEGUI - this also re-creates the root window
+    Cleanup();
+
     // Disable single click timeouts
     m_pSystem->setSingleClickTimeout(100000000.0f);
 
@@ -284,9 +327,6 @@ void CGUI_Impl::SetSkin(const char* szName)
     // Grab our default cursor
     m_pCursor = CEGUI::System::getSingleton().getDefaultMouseCursor();
 #endif
-
-    // Used to create unique names for widget instances
-    m_ulPreviousUnique = 0;
 
     SubscribeToMouseEvents();
 
@@ -565,14 +605,12 @@ bool CGUI_Impl::GetGUIInputEnabled()
                 {
                     return false;
                 }
-                if (activeWindow->getType() == "CGUI/Editbox")
+                if (auto* pEditBox = dynamic_cast<CEGUI::Editbox*>(activeWindow))
                 {
-                    CEGUI::Editbox* pEditBox = reinterpret_cast<CEGUI::Editbox*>(activeWindow);
                     return (!pEditBox->isReadOnly() && pEditBox->hasInputFocus());
                 }
-                else if (activeWindow->getType() == "CGUI/MultiLineEditbox")
+                else if (auto* pMultiLineEditBox = dynamic_cast<CEGUI::MultiLineEditbox*>(activeWindow))
                 {
-                    CEGUI::MultiLineEditbox* pMultiLineEditBox = reinterpret_cast<CEGUI::MultiLineEditbox*>(activeWindow);
                     return (!pMultiLineEditBox->isReadOnly() && pMultiLineEditBox->hasInputFocus());
                 }
                 else if (activeWindow->getType() == CGUIWEBBROWSER_NAME)
@@ -967,7 +1005,12 @@ bool CGUI_Impl::Event_CharacterKey(const CEGUI::EventArgs& Args)
 
         m_CharacterKeyHandlers[m_Channel](NewArgs);
     }
+#ifdef MTA_USE_CEGUI_NEXT
+    // Prevent CEGUI 0.8.7 from propagating character events up the parent chain (which causes duplicate input)
     return true;
+#else
+    return false;
+#endif
 }
 
 CGUIFont* CGUI_Impl::GetDefaultFont()
@@ -1068,11 +1111,8 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
 
                 // Edit boxes
                 CEGUI::Window* Wnd = reinterpret_cast<CEGUI::Window*>(KeyboardArgs.window);
-                if (Wnd->getType() == "CGUI/Editbox")
+                if (auto* WndEdit = dynamic_cast<CEGUI::Editbox*>(Wnd))
                 {
-                    // Turn our event window into an editbox
-                    CEGUI::Editbox* WndEdit = reinterpret_cast<CEGUI::Editbox*>(Wnd);
-
                     // Don't allow cutting/copying if the editbox is masked
                     if (!WndEdit->isTextMasked())
                     {
@@ -1095,13 +1135,8 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
                         }
                     }
                 }
-
-                // Multiline editboxes
-                if (Wnd->getType() == "CGUI/MultiLineEditbox")
+                else if (auto* WndEdit = dynamic_cast<CEGUI::MultiLineEditbox*>(Wnd))
                 {
-                    // Turn our event window into an editbox
-                    CEGUI::MultiLineEditbox* WndEdit = reinterpret_cast<CEGUI::MultiLineEditbox*>(Wnd);
-
                     // Get the text from the editbox
                     size_t sizeSelectionStart = WndEdit->getSelectionStartIndex();
                     size_t sizeSelectionLength = WndEdit->getSelectionLength();
@@ -1152,7 +1187,9 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
             if (KeyboardArgs.sysKeys & CEGUI::Control)
             {
                 CEGUI::Window* Wnd = reinterpret_cast<CEGUI::Window*>(KeyboardArgs.window);
-                if (Wnd->getType() == "CGUI/Editbox" || Wnd->getType() == "CGUI/MultiLineEditbox")
+                auto*          pSingleEdit = dynamic_cast<CEGUI::Editbox*>(Wnd);
+                auto*          pMultiEdit = dynamic_cast<CEGUI::MultiLineEditbox*>(Wnd);
+                if (pSingleEdit || pMultiEdit)
                 {
                     SString      clipboardUtf8 = SharedUtil::GetClipboardText();
                     std::wstring strClipboardText;
@@ -1177,42 +1214,39 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
                     bool          bReplaceNewLines = true;
                     bool          bIsBoxFull = false;
 
-                    if (Wnd->getType() == "CGUI/Editbox")
+                    if (pSingleEdit)
                     {
-                        // Turn our event window into an editbox
-                        CEGUI::Editbox* WndEdit = reinterpret_cast<CEGUI::Editbox*>(Wnd);
                         // Don't paste if we're read only
-                        if (WndEdit->isReadOnly())
+                        if (pSingleEdit->isReadOnly())
                         {
                             return true;
                         }
-                        strEditText = WndEdit->getText();
-                        iSelectionStart = WndEdit->getSelectionStartIndex();
-                        iSelectionLength = WndEdit->getSelectionLength();
-                        iMaxLength = WndEdit->getMaxTextLength();
+                        strEditText = pSingleEdit->getText();
+                        iSelectionStart = pSingleEdit->getSelectionStartIndex();
+                        iSelectionLength = pSingleEdit->getSelectionLength();
+                        iMaxLength = pSingleEdit->getMaxTextLength();
 #ifdef MTA_USE_CEGUI_NEXT
-                        iCaratIndex = WndEdit->getCaretIndex();
+                        iCaratIndex = pSingleEdit->getCaretIndex();
 #else
-                        iCaratIndex = WndEdit->getCaratIndex();
+                        iCaratIndex = pSingleEdit->getCaratIndex();
 #endif
                     }
                     else
                     {
-                        CEGUI::MultiLineEditbox* WndEdit = reinterpret_cast<CEGUI::MultiLineEditbox*>(Wnd);
                         // Don't paste if we're read only
-                        if (WndEdit->isReadOnly())
+                        if (pMultiEdit->isReadOnly())
                         {
                             return true;
                         }
 
-                        strEditText = WndEdit->getText();
-                        iSelectionStart = WndEdit->getSelectionStartIndex();
-                        iSelectionLength = WndEdit->getSelectionLength();
-                        iMaxLength = WndEdit->getMaxTextLength();
+                        strEditText = pMultiEdit->getText();
+                        iSelectionStart = pMultiEdit->getSelectionStartIndex();
+                        iSelectionLength = pMultiEdit->getSelectionLength();
+                        iMaxLength = pMultiEdit->getMaxTextLength();
 #ifdef MTA_USE_CEGUI_NEXT
-                        iCaratIndex = WndEdit->getCaretIndex();
+                        iCaratIndex = pMultiEdit->getCaretIndex();
 #else
-                        iCaratIndex = WndEdit->getCaratIndex();
+                        iCaratIndex = pMultiEdit->getCaratIndex();
 #endif
                         bReplaceNewLines = false;
 
@@ -1278,39 +1312,35 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
                     if (bIsBoxFull)
                     {
                         // Fire an event if the editbox is full
-                        if (Wnd->getType() == "CGUI/Editbox")
+                        if (pSingleEdit)
                         {
-                            CEGUI::Editbox*        WndEdit = reinterpret_cast<CEGUI::Editbox*>(Wnd);
-                            CEGUI::WindowEventArgs args(WndEdit);
-                            WndEdit->fireEvent(CEGUI::Editbox::EventEditboxFull, args);
+                            CEGUI::WindowEventArgs args(pSingleEdit);
+                            pSingleEdit->fireEvent(CEGUI::Editbox::EventEditboxFull, args);
                         }
                         else
                         {
-                            CEGUI::MultiLineEditbox* WndEdit = reinterpret_cast<CEGUI::MultiLineEditbox*>(Wnd);
-                            CEGUI::WindowEventArgs   args(WndEdit);
-                            WndEdit->fireEvent(CEGUI::Editbox::EventEditboxFull, args);
+                            CEGUI::WindowEventArgs args(pMultiEdit);
+                            pMultiEdit->fireEvent(CEGUI::Editbox::EventEditboxFull, args);
                         }
                     }
                     else
                     {
-                        if (Wnd->getType() == "CGUI/Editbox")
+                        if (pSingleEdit)
                         {
-                            CEGUI::Editbox* WndEdit = reinterpret_cast<CEGUI::Editbox*>(Wnd);
-                            WndEdit->setText(strEditText);
+                            pSingleEdit->setText(strEditText);
 #ifdef MTA_USE_CEGUI_NEXT
-                            WndEdit->setCaretIndex(iCaratIndex);
+                            pSingleEdit->setCaretIndex(iCaratIndex);
 #else
-                            WndEdit->setCaratIndex(iCaratIndex);
+                            pSingleEdit->setCaratIndex(iCaratIndex);
 #endif
                         }
                         else
                         {
-                            CEGUI::MultiLineEditbox* WndEdit = reinterpret_cast<CEGUI::MultiLineEditbox*>(Wnd);
-                            WndEdit->setText(strEditText);
+                            pMultiEdit->setText(strEditText);
 #ifdef MTA_USE_CEGUI_NEXT
-                            WndEdit->setCaretIndex(iCaratIndex);
+                            pMultiEdit->setCaretIndex(iCaratIndex);
 #else
-                            WndEdit->setCaratIndex(iCaratIndex);
+                            pMultiEdit->setCaratIndex(iCaratIndex);
 #endif
                         }
                     }
@@ -1327,16 +1357,12 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
             {
                 // Edit boxes
                 CEGUI::Window* Wnd = reinterpret_cast<CEGUI::Window*>(KeyboardArgs.window);
-                if (Wnd->getType() == "CGUI/Editbox")
+                if (auto* WndEdit = dynamic_cast<CEGUI::Editbox*>(Wnd))
                 {
-                    // Turn our event window into an editbox
-                    CEGUI::Editbox* WndEdit = reinterpret_cast<CEGUI::Editbox*>(Wnd);
                     WndEdit->setSelection(0, WndEdit->getText().size());
                 }
-                else if (Wnd->getType() == "CGUI/MultiLineEditbox")
+                else if (auto* WndEdit = dynamic_cast<CEGUI::MultiLineEditbox*>(Wnd))
                 {
-                    // Turn our event window into a multiline editbox
-                    CEGUI::MultiLineEditbox* WndEdit = reinterpret_cast<CEGUI::MultiLineEditbox*>(Wnd);
                     WndEdit->setSelection(0, WndEdit->getText().size());
                 }
             }
@@ -1345,7 +1371,7 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
         }
     }
 
-    return true;
+    return false;
 }
 
 void CGUI_Impl::SetDefaultGuiWorkingDirectory(const SString& strDir)

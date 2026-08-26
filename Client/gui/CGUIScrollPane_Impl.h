@@ -41,4 +41,6 @@ public:
 
 private:
     class CGUI_Impl* m_pGUI;
+    bool             m_bHorzScrollbarEnabled{true};
+    bool             m_bVertScrollbarEnabled{true};
 };

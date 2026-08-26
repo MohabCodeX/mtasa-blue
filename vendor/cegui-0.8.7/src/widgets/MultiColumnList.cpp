@@ -36,6 +36,7 @@
 #include "CEGUI/PropertyHelper.h"
 #include "CEGUI/CoordConverter.h"
 #include "CEGUI/WindowManager.h"
+#include "CEGUI/Font.h"
 #include <algorithm>
 
 
@@ -847,16 +848,16 @@ void MultiColumnList::moveColumnWithID(uint col_id, uint position)
 /*************************************************************************
 	Add a row to the bottom of the table
 *************************************************************************/
-uint MultiColumnList::addRow(uint row_id)
+uint MultiColumnList::addRow(uint row_id, bool fast)
 {
-	return addRow(0, 0, row_id);
+	return addRow(0, 0, row_id, fast);
 }
 
 
 /*************************************************************************
 	Add a row to the bottom of the table
 *************************************************************************/
-uint MultiColumnList::addRow(ListboxItem* item, uint col_id, uint row_id)
+uint MultiColumnList::addRow(ListboxItem* item, uint col_id, uint row_id, bool fast)
 {
 	uint col_idx = 0;
 
@@ -898,9 +899,12 @@ uint MultiColumnList::addRow(ListboxItem* item, uint col_id, uint row_id)
 		d_grid.push_back(row);
 	}
 
-	// signal a change to the list contents
-	WindowEventArgs args(this);
-	onListContentsChanged(args);
+    if (!fast)
+    {
+        // signal a change to the list contents
+        WindowEventArgs args(this);
+        onListContentsChanged(args);
+    }
 
 	return pos;
 }
@@ -1000,7 +1004,7 @@ void MultiColumnList::removeRow(uint row_idx)
 	Replace the item at grid-ref 'position' with 'item'.
 	The old item is deleted according to the items auto-delete setting
 *************************************************************************/
-void MultiColumnList::setItem(ListboxItem* item, const MCLGridRef& position)
+void MultiColumnList::setItem(ListboxItem* item, const MCLGridRef& position, bool fast)
 {
 	// validate grid ref
 	if (position.column >= getColumnCount())
@@ -1029,9 +1033,16 @@ void MultiColumnList::setItem(ListboxItem* item, const MCLGridRef& position)
 	d_grid[position.row][position.column] = item;
 
 
-	// signal a change to the list contents
-	WindowEventArgs args(this);
-	onListContentsChanged(args);
+	if (!fast)
+	{
+		// signal a change to the list contents
+		WindowEventArgs args(this);
+		onListContentsChanged(args);
+	}
+	else
+	{
+		invalidate();
+	}
 }
 
 
@@ -1039,9 +1050,9 @@ void MultiColumnList::setItem(ListboxItem* item, const MCLGridRef& position)
 	Replace the item in row 'row_idx', in the column with ID 'col_id'
 	with 'item'.  The old item is deleted as required.
 *************************************************************************/
-void MultiColumnList::setItem(ListboxItem* item, uint col_id, uint row_idx)
+void MultiColumnList::setItem(ListboxItem* item, uint col_id, uint row_idx, bool fast)
 {
-	setItem(item, MCLGridRef(row_idx, getColumnWithID(col_id)));
+	setItem(item, MCLGridRef(row_idx, getColumnWithID(col_id)), fast);
 }
 
 
@@ -1529,35 +1540,35 @@ float MultiColumnList::getHighestRowItemHeight(uint row_idx) const
 		CEGUI_THROW(InvalidRequestException(
             "specified row is out of range."));
 	}
-	else
+
+	if (const Font* fnt = getFont())
 	{
-		float height = 0.0f;
-
-		// check each item in the column
-		for (uint i = 0; i < getColumnCount(); ++i)
-		{
-			ListboxItem* item = d_grid[row_idx][i];
-
-			// if the slot has an item in it
-			if (item)
-			{
-				Sizef sz(item->getPixelSize());
-
-				// see if this item is higher than the previous highest
-				if (sz.d_height > height)
-				{
-					// update current highest
-					height = sz.d_height;
-				}
-
-			}
-
-		}
-
-		// return the hightest item.
-		return height;
+		return fnt->getFontHeight();
 	}
 
+	float height = 0.0f;
+
+	// check each item in the column
+	for (uint i = 0; i < getColumnCount(); ++i)
+	{
+		ListboxItem* item = d_grid[row_idx][i];
+
+		// if the slot has an item in it
+		if (item)
+		{
+			Sizef sz(item->getPixelSize());
+
+			// see if this item is higher than the previous highest
+			if (sz.d_height > height)
+			{
+				// update current highest
+				height = sz.d_height;
+			}
+		}
+	}
+
+	// return the hightest item.
+	return height;
 }
 
 

@@ -529,33 +529,7 @@ CGUIElement* CGUIElement_Impl::GetParent()
 
 void CGUIElement_Impl::CorrectEdges()
 {
-#ifdef MTA_USE_CEGUI_NEXT
-    if (!m_pWindow || !m_pWindow->getParent())
-        return;
-
-    // Label turns out to be buggy
-    if (m_pWindow->getType() == "CGUI/StaticText")
-        return;
-
-    if (m_pWindow->getParent()->getType() == "CGUI/FrameWindow")
-    {
-        CEGUI::Vector2f currentPoint = CEGUI::CoordConverter::asAbsolute(m_pWindow->getPosition(), m_pWindow->getParent()->getPixelSize());
-        CEGUI::Sizef    currentSize = m_pWindow->getPixelSize();
-        CEGUI::Sizef    parentSize = m_pWindow->getParent()->getPixelSize();
-
-        if (currentPoint.d_x < CGUI_NODRAW_LEFT)
-            currentPoint.d_x += CGUI_NODRAW_LEFT - currentPoint.d_x;
-        if (currentPoint.d_y < CGUI_NODRAW_TOP)
-            currentPoint.d_y += CGUI_NODRAW_TOP - currentPoint.d_x;
-        if ((currentSize.d_height + currentPoint.d_y) > (parentSize.d_height - CGUI_NODRAW_BOTTOM))
-            currentSize.d_height -= (currentSize.d_height + currentPoint.d_y) - (parentSize.d_height - CGUI_NODRAW_BOTTOM);
-        if ((currentSize.d_width + currentPoint.d_x) > (parentSize.d_width - CGUI_NODRAW_RIGHT))
-            currentSize.d_width -= (currentSize.d_width + currentPoint.d_x) - (parentSize.d_width - CGUI_NODRAW_RIGHT);
-
-        m_pWindow->setPosition(CEGUI::UVector2(CEGUI::UDim(0.0f, currentPoint.d_x), CEGUI::UDim(0.0f, currentPoint.d_y)));
-        m_pWindow->setSize(CEGUI::USize(CEGUI::UDim(0.0f, currentSize.d_width), CEGUI::UDim(0.0f, currentSize.d_height)));
-    }
-#else
+#ifndef MTA_USE_CEGUI_NEXT
     CEGUI::Point currentPoint = m_pWindow->getPosition(CEGUI::Absolute);
     CEGUI::Size  currentSize = m_pWindow->getSize(CEGUI::Absolute);
     // Label turns out to be buggy
@@ -622,8 +596,67 @@ std::string CGUIElement_Impl::GetFont()
     return "";
 }
 
+#ifdef MTA_USE_CEGUI_NEXT
+static const char* TranslateLegacyPropertyName(const char* szProperty)
+{
+    if (stricmp(szProperty, "CaratIndex") == 0)
+        return "CaretIndex";
+    if (stricmp(szProperty, "RollUpEnabled") == 0)
+        return "RollupEnabled";
+    if (stricmp(szProperty, "UnifiedAreaRect") == 0 || stricmp(szProperty, "AbsoluteAreaRect") == 0 || stricmp(szProperty, "AbsoluteRect") == 0)
+        return "Area";
+    if (stricmp(szProperty, "UnifiedPosition") == 0 || stricmp(szProperty, "AbsolutePosition") == 0)
+        return "Position";
+    if (stricmp(szProperty, "UnifiedSize") == 0 || stricmp(szProperty, "AbsoluteSize") == 0)
+        return "Size";
+    if (stricmp(szProperty, "UnifiedXPosition") == 0 || stricmp(szProperty, "AbsoluteXPosition") == 0)
+        return "XPosition";
+    if (stricmp(szProperty, "UnifiedYPosition") == 0 || stricmp(szProperty, "AbsoluteYPosition") == 0)
+        return "YPosition";
+    if (stricmp(szProperty, "UnifiedWidth") == 0 || stricmp(szProperty, "AbsoluteWidth") == 0)
+        return "Width";
+    if (stricmp(szProperty, "UnifiedHeight") == 0 || stricmp(szProperty, "AbsoluteHeight") == 0)
+        return "Height";
+    return szProperty;
+}
+
+static std::string TranslateLegacyPropertyValue(const char* szValue)
+{
+    if (!szValue)
+        return "";
+
+    // Convert legacy "set:ImagesetName image:ImageName" to "ImagesetName/ImageName"
+    const char* szSet = strstr(szValue, "set:");
+    const char* szImg = strstr(szValue, "image:");
+    if (szSet && szImg && szSet < szImg)
+    {
+        std::string strSet(szSet + 4, szImg - (szSet + 4));
+        size_t      last = strSet.find_last_not_of(" \t\r\n");
+        if (last != std::string::npos)
+            strSet = strSet.substr(0, last + 1);
+
+        std::string strImg(szImg + 6);
+        size_t      first = strImg.find_first_not_of(" \t\r\n");
+        if (first != std::string::npos)
+            strImg = strImg.substr(first);
+        last = strImg.find_last_not_of(" \t\r\n");
+        if (last != std::string::npos)
+            strImg = strImg.substr(0, last + 1);
+
+        return strSet + "/" + strImg;
+    }
+
+    return szValue;
+}
+#endif
+
 void CGUIElement_Impl::SetProperty(const char* szProperty, const char* szValue)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    szProperty = TranslateLegacyPropertyName(szProperty);
+    std::string strTranslatedValue = TranslateLegacyPropertyValue(szValue);
+    szValue = strTranslatedValue.c_str();
+#endif
     try
     {
         m_pWindow->setProperty(CGUI_Impl::GetUTFString(szProperty), CGUI_Impl::GetUTFString(szValue));
@@ -635,6 +668,9 @@ void CGUIElement_Impl::SetProperty(const char* szProperty, const char* szValue)
 
 std::string CGUIElement_Impl::GetProperty(const char* szProperty)
 {
+#ifdef MTA_USE_CEGUI_NEXT
+    szProperty = TranslateLegacyPropertyName(szProperty);
+#endif
     CEGUI::String strValue;
     try
     {
@@ -918,7 +954,7 @@ bool CGUIElement_Impl::Event_OnKeyDown(const CEGUI::EventArgs& e)
         }
     }
 
-    return true;
+    return false;
 }
 
 inline void CGUIElement_Impl::ForceRedraw()

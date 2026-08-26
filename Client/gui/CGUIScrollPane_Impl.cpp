@@ -58,12 +58,34 @@ CGUIScrollPane_Impl::~CGUIScrollPane_Impl()
 
 void CGUIScrollPane_Impl::SetHorizontalScrollBar(bool bEnabled)
 {
+    m_bHorzScrollbarEnabled = bEnabled;
+#ifdef MTA_USE_CEGUI_NEXT
+    auto* pPane = reinterpret_cast<CEGUI::ScrollablePane*>(m_pWindow);
+    pPane->setShowHorzScrollbar(bEnabled);
+    pPane->setEnableHorzScroll(bEnabled);
+    if (!bEnabled && pPane->isChild(CEGUI::ScrollablePane::HorzScrollbarName))
+    {
+        pPane->getHorzScrollbar()->setVisible(false);
+    }
+#else
     reinterpret_cast<CEGUI::ScrollablePane*>(m_pWindow)->setShowHorzScrollbar(bEnabled);
+#endif
 }
 
 void CGUIScrollPane_Impl::SetVerticalScrollBar(bool bEnabled)
 {
+    m_bVertScrollbarEnabled = bEnabled;
+#ifdef MTA_USE_CEGUI_NEXT
+    auto* pPane = reinterpret_cast<CEGUI::ScrollablePane*>(m_pWindow);
+    pPane->setShowVertScrollbar(bEnabled);
+    pPane->setEnableVertScroll(bEnabled);
+    if (!bEnabled && pPane->isChild(CEGUI::ScrollablePane::VertScrollbarName))
+    {
+        pPane->getVertScrollbar()->setVisible(false);
+    }
+#else
     reinterpret_cast<CEGUI::ScrollablePane*>(m_pWindow)->setShowVertScrollbar(bEnabled);
+#endif
 }
 
 void CGUIScrollPane_Impl::SetHorizontalScrollPosition(float fPosition)

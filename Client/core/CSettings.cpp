@@ -541,7 +541,7 @@ void CSettings::CreateGUI()
         pWindow->SetAlwaysOnTop(true);
         pWindow->BringToFront();
         m_pWindow = pWindow;
-        tabPanelPosition = CVector2D(0, 20);
+        tabPanelPosition = CVector2D(kSettingsWindowFrameHorizontal / 2, 20);
     }
     else
     {

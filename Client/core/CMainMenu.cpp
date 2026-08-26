@@ -86,7 +86,7 @@ CMainMenu::CMainMenu(CGUI* pManager)
     int iBackgroundX = 0;
     int iBackgroundY = 0;
     int iBackgroundSizeX = ScreenSize.fX;
-    int iBackgroundSizeY;
+    int iBackgroundSizeY = ScreenSize.fY;
 
     // First let's work out our x and y offsets
     if (ScreenSize.fX > ScreenSize.fY)  // If the monitor is a normal landscape one
@@ -96,10 +96,6 @@ CMainMenu::CMainMenu(CGUI* pManager)
         m_iMenuSizeY = ScreenSize.fY;
         m_iXOff = (ScreenSize.fX - m_iMenuSizeX) * 0.5f;
         m_iYOff = 0;
-
-        float iRatioSizeX = ScreenSize.fX / NATIVE_RES_X;
-        iBackgroundSizeX = ScreenSize.fX;
-        iBackgroundSizeY = NATIVE_BG_Y * iRatioSizeX;
     }
     else  // Otherwise our monitor is in a portrait resolution, so we cant fill the background by y
     {
@@ -108,12 +104,8 @@ CMainMenu::CMainMenu(CGUI* pManager)
         m_iMenuSizeX = ScreenSize.fX;
         m_iXOff = 0;
         m_iYOff = (ScreenSize.fY - m_iMenuSizeY) * 0.5f;
-
-        iBackgroundY = m_iYOff;
-        iBackgroundSizeX = m_iMenuSizeX;
-        iBackgroundSizeY = NATIVE_BG_Y * iRatioSizeX;
     }
-    // First create our filler black background image, which covers the whole screen
+    // First create our filler black background image (kept for fallback / portrait letterboxing)
     m_pFiller = reinterpret_cast<CGUIStaticImage*>(pManager->CreateStaticImage());
     m_pFiller->LoadFromFile(CORE_MTA_FILLER);
     m_pFiller->SetVisible(false);
@@ -121,9 +113,9 @@ CMainMenu::CMainMenu(CGUI* pManager)
     m_pFiller->SetZOrderingEnabled(false);
     m_pFiller->SetAlwaysOnTop(true);
     m_pFiller->MoveToBack();
-    m_pFiller->SetSize(CVector2D(ScreenSize.fX, iBackgroundY), false);
+    m_pFiller->SetSize(CVector2D(ScreenSize.fX, 0.0f), false);
 
-    // Background image
+    // Background image fills the entire viewport cleanly
     m_pBackground = reinterpret_cast<CGUIStaticImage*>(pManager->CreateStaticImage());
     m_pBackground->LoadFromFile(CORE_MTA_STATIC_BG);
     m_pBackground->SetInheritsAlpha(false);
@@ -135,14 +127,15 @@ CMainMenu::CMainMenu(CGUI* pManager)
     m_pBackground->SetAlpha(0);
     m_pBackground->SetVisible(false);
 
+    // Bottom filler (kept for fallback)
     m_pFiller2 = reinterpret_cast<CGUIStaticImage*>(pManager->CreateStaticImage());
     m_pFiller2->LoadFromFile(CORE_MTA_FILLER);
     m_pFiller2->SetVisible(false);
     m_pFiller2->SetZOrderingEnabled(false);
     m_pFiller2->SetAlwaysOnTop(true);
     m_pFiller2->MoveToBack();
-    m_pFiller2->SetPosition(CVector2D(0, iBackgroundY + iBackgroundSizeY));
-    m_pFiller2->SetSize(ScreenSize, false);
+    m_pFiller2->SetPosition(CVector2D(0, ScreenSize.fY));
+    m_pFiller2->SetSize(CVector2D(ScreenSize.fX, 0.0f), false);
 
     m_pCanvas = reinterpret_cast<CGUIScrollPane*>(pManager->CreateScrollPane());
     m_pCanvas->SetPosition(CVector2D(m_iXOff, m_iYOff), false);
@@ -151,6 +144,8 @@ CMainMenu::CMainMenu(CGUI* pManager)
     m_pCanvas->SetAlwaysOnTop(true);
     m_pCanvas->MoveToBack();
     m_pCanvas->SetVisible(false);
+    m_pCanvas->SetHorizontalScrollBar(false);
+    m_pCanvas->SetVerticalScrollBar(false);
 
     // Create our MTA logo
     CVector2D logoSize = CVector2D((NATIVE_LOGO_X / NATIVE_RES_X) * m_iMenuSizeX, (NATIVE_LOGO_Y / NATIVE_RES_Y) * m_iMenuSizeY);
