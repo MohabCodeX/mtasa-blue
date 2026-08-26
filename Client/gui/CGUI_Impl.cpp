@@ -426,9 +426,9 @@ void CGUI_Impl::Draw()
 #ifdef MTA_USE_CEGUI_NEXT
     try
     {
-        if (m_pDefaultGUIContext)
-            m_pDefaultGUIContext->markAsDirty();
-
+        // CEGUI 0.8.7 automatically tracks dirty state on user input, window moves, resizes,
+        // and property changes. Do not unconditionally mark the context dirty every frame,
+        // allowing static frames to bypass geometry buffer rebuilding.
         m_pSystem->renderAllGUIContexts();
     }
     catch (const CEGUI::Exception& e)

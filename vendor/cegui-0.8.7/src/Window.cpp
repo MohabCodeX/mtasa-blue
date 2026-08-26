@@ -644,6 +644,15 @@ Window* Window::getChildAtPosition(const Vector2f& position,
     {
         if ((*child)->isEffectiveVisible())
         {
+            // Spatial bounding-box fast path: if the test point does not fall inside this child's
+            // outer unclipped bounds, skip the entire recursive subtree if the child has no children
+            // or is clipped to parent bounds. This avoids O(N) unprojection and hierarchy traversal on mouse moves.
+            if (!(*child)->getUnclippedOuterRect().get().isPointInRect(p))
+            {
+                if ((*child)->getChildCount() == 0 || (*child)->isClippedByParent())
+                    continue;
+            }
+
             // recursively scan for hit on children of this child window...
             if (Window* const wnd = (*child)->getChildAtPosition(p, hittestfunc, allow_disabled))
                 return wnd;
