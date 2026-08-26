@@ -80,6 +80,11 @@ namespace CEGUI
 	*************************************************************************/
 	void GlobalEventSet::fireEvent(const String& name, EventArgs& args, const String& eventNamespace)
 	{
+        // Fast short-circuit: if no global listeners are subscribed or events are muted,
+        // bypass string formatting, heap allocations, and map lookups entirely.
+        if (d_muted || d_events.empty())
+            return;
+
         // here we are very explicit about how we construct the event string.
         // Doing it 'longhand' like this saves significant time when compared
         // to the obvious - and previous - implementation:

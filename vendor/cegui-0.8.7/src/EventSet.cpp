@@ -173,6 +173,15 @@ void EventSet::setMutedState(bool setting)
 //----------------------------------------------------------------------------//
 Event* EventSet::getEventObject(const String& name, bool autoAdd)
 {
+    if (d_events.empty())
+    {
+        if (!autoAdd)
+            return 0;
+
+        addEvent(name);
+        return d_events.find(name)->second;
+    }
+
     EventMap::const_iterator pos = d_events.find(name);
 
     // if event did not exist, add it as needed and then find it.
@@ -191,9 +200,12 @@ Event* EventSet::getEventObject(const String& name, bool autoAdd)
 //----------------------------------------------------------------------------//
 void EventSet::fireEvent_impl(const String& name, EventArgs& args)
 {
+    if (d_muted || d_events.empty())
+        return;
+
     Event* ev = getEventObject(name);
 
-    if ((ev != 0) && !d_muted)
+    if (ev != 0)
         (*ev)(args);
 }
 
