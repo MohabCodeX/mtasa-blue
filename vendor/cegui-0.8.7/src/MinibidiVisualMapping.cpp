@@ -25,64 +25,62 @@
  *   OTHER DEALINGS IN THE SOFTWARE.
  ***************************************************************************/
 #ifdef HAVE_CONFIG_H
-#   include "config.h"
+    #include "config.h"
 #endif
 
 #include "CEGUI/Config.h"
 
 #ifdef CEGUI_USE_MINIBIDI
 
-#include "CEGUI/MinibidiVisualMapping.h"
-#include "CEGUI/Logger.h"
+    #include "CEGUI/MinibidiVisualMapping.h"
+    #include "CEGUI/Logger.h"
 
-// include minibidi code directly
-#include "minibidi.cpp"
+    // include minibidi code directly
+    #include "minibidi.cpp"
 
 // Start of CEGUI namespace section
 namespace CEGUI
 {
-//----------------------------------------------------------------------------//
-BidiCharType MinibidiVisualMapping::getBidiCharType(const utf32 char_to_check) const
-{
-    switch (getType(char_to_check))
+    //----------------------------------------------------------------------------//
+    BidiCharType MinibidiVisualMapping::getBidiCharType(const utf32 char_to_check) const
     {
-    case R:
-        return BCT_RIGHT_TO_LEFT;
-        break;
+        switch (getType(char_to_check))
+        {
+            case R:
+            case AL:
+            case RLE:
+            case RLO:
+            case AN:
+                return BCT_RIGHT_TO_LEFT;
 
-    case L:
-        return BCT_LEFT_TO_RIGHT;
-        break;
+            case L:
+            case LRE:
+            case LRO:
+                return BCT_LEFT_TO_RIGHT;
 
-    default:
-        return BCT_NEUTRAL;
-        break;
+            default:
+                return BCT_NEUTRAL;
+        }
     }
-}
 
-//----------------------------------------------------------------------------//
-bool MinibidiVisualMapping::reorderFromLogicalToVisual(const String& logical,
-                                                       String& visual,
-                                                       StrIndexList& l2v,
-                                                       StrIndexList& v2l) const
-{
-    visual = logical;
+    //----------------------------------------------------------------------------//
+    bool MinibidiVisualMapping::reorderFromLogicalToVisual(const String& logical, String& visual, StrIndexList& l2v, StrIndexList& v2l) const
+    {
+        visual = logical;
 
-    if (logical.length() <= 1)
+        if (logical.length() <= 1)
+            return true;
+
+        l2v.resize(logical.length());
+        v2l.resize(logical.length());
+
+        doBidi(visual.ptr(), static_cast<int>(logical.length()), true, false, &v2l[0], &l2v[0]);
+
         return true;
+    }
 
-    l2v.resize(logical.length());
-    v2l.resize(logical.length());
+    //----------------------------------------------------------------------------//
 
-    doBidi(visual.ptr(), static_cast<int>(logical.length()),
-           true, false,
-           &v2l[0], &l2v[0]);
+}  // End of  CEGUI namespace section
 
-    return true;
-}
-
-//----------------------------------------------------------------------------//
-
-} // End of  CEGUI namespace section
-
-#endif // CEGUI_USE_MINIBIDI
+#endif  // CEGUI_USE_MINIBIDI
