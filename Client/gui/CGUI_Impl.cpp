@@ -1176,6 +1176,11 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
                     if (!clipboardText.empty())
                         SharedUtil::SetClipboardText(clipboardText);
                 }
+
+#ifdef MTA_USE_CEGUI_NEXT
+                const_cast<CEGUI::KeyEventArgs&>(KeyboardArgs).handled++;
+#endif
+                return true;
             }
 
             break;
@@ -1219,6 +1224,9 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
                         // Don't paste if we're read only
                         if (pSingleEdit->isReadOnly())
                         {
+#ifdef MTA_USE_CEGUI_NEXT
+                            const_cast<CEGUI::KeyEventArgs&>(KeyboardArgs).handled++;
+#endif
                             return true;
                         }
                         strEditText = pSingleEdit->getText();
@@ -1236,6 +1244,9 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
                         // Don't paste if we're read only
                         if (pMultiEdit->isReadOnly())
                         {
+#ifdef MTA_USE_CEGUI_NEXT
+                            const_cast<CEGUI::KeyEventArgs&>(KeyboardArgs).handled++;
+#endif
                             return true;
                         }
 
@@ -1320,7 +1331,7 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
                         else
                         {
                             CEGUI::WindowEventArgs args(pMultiEdit);
-                            pMultiEdit->fireEvent(CEGUI::Editbox::EventEditboxFull, args);
+                            pMultiEdit->fireEvent(CEGUI::MultiLineEditbox::EventEditboxFull, args);
                         }
                     }
                     else
@@ -1344,6 +1355,10 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
 #endif
                         }
                     }
+#ifdef MTA_USE_CEGUI_NEXT
+                    const_cast<CEGUI::KeyEventArgs&>(KeyboardArgs).handled++;
+#endif
+                    return true;
                 }
             }
 
@@ -1360,10 +1375,18 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
                 if (auto* WndEdit = dynamic_cast<CEGUI::Editbox*>(Wnd))
                 {
                     WndEdit->setSelection(0, WndEdit->getText().size());
+#ifdef MTA_USE_CEGUI_NEXT
+                    const_cast<CEGUI::KeyEventArgs&>(KeyboardArgs).handled++;
+#endif
+                    return true;
                 }
                 else if (auto* WndEdit = dynamic_cast<CEGUI::MultiLineEditbox*>(Wnd))
                 {
                     WndEdit->setSelection(0, WndEdit->getText().size());
+#ifdef MTA_USE_CEGUI_NEXT
+                    const_cast<CEGUI::KeyEventArgs&>(KeyboardArgs).handled++;
+#endif
+                    return true;
                 }
             }
 

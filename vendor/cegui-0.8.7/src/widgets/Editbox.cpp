@@ -606,6 +606,9 @@ void Editbox::onKeyDown(KeyEventArgs& e)
     // fire event.
     fireEvent(EventKeyDown, e, Window::EventNamespace);
 
+    if (e.handled)
+        return;
+
     if (hasInputFocus())
     {
         if (isReadOnly())
