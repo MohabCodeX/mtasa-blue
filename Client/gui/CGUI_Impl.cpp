@@ -1374,7 +1374,12 @@ bool CGUI_Impl::Event_KeyDown(const CEGUI::EventArgs& Args)
         }
     }
 
+#ifdef MTA_USE_CEGUI_NEXT
+    // Prevent CEGUI 0.8.7 from propagating key down events up the parent hierarchy
+    return true;
+#else
     return false;
+#endif
 }
 
 void CGUI_Impl::SetDefaultGuiWorkingDirectory(const SString& strDir)

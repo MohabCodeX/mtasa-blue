@@ -1344,7 +1344,6 @@ namespace CEGUI
         {
             if (isReadOnly())
             {
-                Window::onKeyDown(e);
                 return;
             }
 
@@ -1433,7 +1432,6 @@ namespace CEGUI
                     break;
 
                 default:
-                    Window::onKeyDown(e);
                     return;
             }
 
