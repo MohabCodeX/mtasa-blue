@@ -154,7 +154,7 @@ CGUIHorizontalAlign CGUILabel_Impl::GetHorizontalAlign()
         return CGUI_ALIGN_LEFT_WORDWRAP;
     return CGUI_ALIGN_LEFT;
 #else
-    return static_cast<CGUIVerticalAlign>(reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->getHorizontalFormatting());
+    return static_cast<CGUIHorizontalAlign>(reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->getHorizontalFormatting());
 #endif
 }
 
