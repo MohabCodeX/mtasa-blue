@@ -13,6 +13,7 @@
 
 #ifdef MTA_USE_CEGUI_NEXT
     #include <CEGUI/PropertyHelper.h>
+    #include <CEGUI/FreeTypeFont.h>
 #endif
 
 #define CGUILABEL_NAME "CGUI/StaticText"
@@ -26,7 +27,7 @@ CGUILabel_Impl::CGUILabel_Impl(CGUI_Impl* pGUI, CGUIElement* pParent, const char
     pGUI->GetUniqueName(szUnique);
 
     // Create the window and set default settings
-    m_pWindow = pGUI->GetWindowManager()->createWindow(CGUILABEL_NAME, szUnique);
+    m_pWindow = pGUI->GetWindowManager()->createWindow(pGUI->ResolveWindowType(CGUILABEL_NAME, pParent), szUnique);
     m_pWindow->setDestroyedByParent(false);
 
     // Store the pointer to this CGUI element in the CEGUI element
@@ -154,7 +155,7 @@ CGUIHorizontalAlign CGUILabel_Impl::GetHorizontalAlign()
         return CGUI_ALIGN_LEFT_WORDWRAP;
     return CGUI_ALIGN_LEFT;
 #else
-    return static_cast<CGUIVerticalAlign>(reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->getHorizontalFormatting());
+    return static_cast<CGUIHorizontalAlign>(reinterpret_cast<CEGUI::StaticText*>(m_pWindow)->getHorizontalFormatting());
 #endif
 }
 
@@ -240,7 +241,14 @@ float CGUILabel_Impl::GetFontHeight()
 {
     const CEGUI::Font* pFont = m_pWindow->getFont();
     if (pFont)
+    {
+#ifdef MTA_USE_CEGUI_NEXT
+        // Report the height the way 0.4 did (guiLabelGetFontHeight), see FreeTypeFont::getLegacyFontHeight
+        if (const CEGUI::FreeTypeFont* pFreeTypeFont = dynamic_cast<const CEGUI::FreeTypeFont*>(pFont))
+            return pFreeTypeFont->getLegacyFontHeight();
+#endif
         return pFont->getFontHeight();
+    }
     return 14.0f;
 }
 

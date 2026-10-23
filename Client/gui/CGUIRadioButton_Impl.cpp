@@ -22,13 +22,17 @@ CGUIRadioButton_Impl::CGUIRadioButton_Impl(CGUI_Impl* pGUI, CGUIElement* pParent
     pGUI->GetUniqueName(szUnique);
 
     // Create the window and set default settings
-    m_pWindow = pGUI->GetWindowManager()->createWindow(CGUIRADIOBUTTON_NAME, szUnique);
+    m_pWindow = pGUI->GetWindowManager()->createWindow(pGUI->ResolveWindowType(CGUIRADIOBUTTON_NAME, pParent), szUnique);
     m_pWindow->setDestroyedByParent(false);
 
     m_pWindow->setText(CGUI_Impl::GetUTFString(szCaption));
 
 #ifdef MTA_USE_CEGUI_NEXT
     m_pWindow->setSize(CEGUI::USize(CEGUI::UDim(0.0f, 128.0f), CEGUI::UDim(0.0f, 16.0f)));
+    // CEGUI 0.8.7's ButtonBase turns double-clicks off for every button type, checkboxes included. In 0.4 a
+    // checkbox/radio button got them, so onClientGUIDoubleClick fired and a double-click toggled it once.
+    // Turn them back on so scripts behave the same.
+    m_pWindow->setWantsMultiClickEvents(true);
 #else
     m_pWindow->setSize(CEGUI::Absolute, CEGUI::Size(128.0f, 16.0f));
 #endif
