@@ -651,9 +651,11 @@ bool CCore::IsCursorForcedVisible()
 
 void CCore::ApplyConsoleSettings()
 {
-    CVector2D vec;
     CConsole* pConsole = m_pLocalGUI->GetConsole();
+    if (!pConsole) [[unlikely]]
+        return;
 
+    CVector2D vec;
     CVARS_GET("console_pos", vec);
     pConsole->SetPosition(vec);
     CVARS_GET("console_size", vec);
@@ -1436,7 +1438,12 @@ void CCore::DoPostFramePulse()
     if (!IsFocused() && m_bLastFocused)
     {
         // Fix for #4948
-        m_pKeyBinds->CallAllGTAControlBinds(CONTROL_BOTH, false);
+        // A fatal fault dialog takes focus while pumping messages; releasing the
+        // control binds runs Lua handlers that touch the half-destroyed GUI.
+        // Skipping the release is safe because both fault paths terminate the
+        // process when the dialog closes.
+        if (!CLocalGUI::IsFaultDialogOpen())
+            m_pKeyBinds->CallAllGTAControlBinds(CONTROL_BOTH, false);
         m_bLastFocused = false;
     }
     else if (IsFocused() && !m_bLastFocused)
@@ -1963,8 +1970,10 @@ void CCore::ApplyCoreInitSettings()
 //
 void CCore::OnGameTimerUpdate()
 {
-    // NOTE: (pxd) We are handling the frame limiting updates
-    // earlier in the callpath (CModManager::DoPulsePreFrame, CModManager::DoPulsePostFrame)
+    // GTA samples its clock right after this. Waiting here keeps the frame deltas it
+    // measures exact, whatever runs between Present and the next frame does not leak in
+    if (m_pFPSLimiter)
+        m_pFPSLimiter->OnGameTimerUpdate();
 }
 
 void CCore::OnFPSLimitChange(std::uint16_t fps)
@@ -2108,7 +2117,7 @@ void CCore::CalculateStreamingMemoryRange()
     float fMaxAmount = EvalSamplePosition<float>(maxPoints, NUMELMS(maxPoints), iSystemRamMB);
 
     // Scale max if gta3.img is over 1GB
-    SString strGta3imgFilename = PathJoin(GetLaunchPath(), "models", "gta3.img");
+    SString strGta3imgFilename = PathJoin(UTF8FilePath(g_gtaDirectory), "models", "gta3.img");
     uint    uiFileSizeMB = FileSize(strGta3imgFilename) / 0x100000LL;
     float   fSizeScale = UnlerpClamped(1024, uiFileSizeMB, 2048);
     fMaxAmount += fMaxAmount * fSizeScale;
@@ -2239,6 +2248,9 @@ void CCore::HandleIdlePulse()
     {
         DoPreFramePulse();
         DoPostFramePulse();
+
+        // GTA keeps ticking while minimized but renders nothing, so end the frame here for the FPS limiter
+        m_pFPSLimiter->OnFrameEnd();
     }
 
     if (m_pModManager->IsLoaded())
